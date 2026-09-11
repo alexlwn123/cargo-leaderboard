@@ -20,14 +20,14 @@ function render() {
   $('#approve-form').hidden = !code || !user;
   $('#account-title').textContent = approved ? 'Connection approved.' : code ? 'Connect this CLI.' : user ? 'Your projects. Your account.' : 'Put your project on the board.';
   $('#account-intro').textContent = approved ? 'Return to your agent or terminal to continue with your first build.' : code ?
-    'Your CLI is ready. Sign in with GitHub, then approve the matching code to connect it to your account.' :
-    'Start with your coding agent. It installs the CLI, then opens GitHub sign-in when your project is ready to connect.';
-  $('#account-status').textContent = user ? `Signed in as @${user.github_login}` : 'Sign in to approve the CLI connection you started.';
+    'Sign in with GitHub to continue. You’ll review the connection before approving it.' :
+    'Your agent will install the CLI and guide you through GitHub sign-in.';
+  $('#account-status').textContent = user ? `Signed in as @${user.github_login}` : 'Your leaderboard identity';
   if (!code && user && !approved) {
     $('#account-intro').textContent = 'Manage your connected CLIs, or add another project with your agent.';
     $('#get-started').before($('#account-card'));
   }
-  if (code && user) $('#account-intro').textContent = 'Your CLI is ready. Approve the matching code to connect it to your GitHub account.';
+  if (code && user) $('#account-intro').textContent = 'Allow this CLI to submit measurements under your GitHub account.';
 }
 render();
 $('#copy-prompt').addEventListener('click', async () => {
