@@ -16,17 +16,17 @@ try {
     }
     $bin = Join-Path $root 'bin with spaces'
     $env:CARGO_LEADERBOARD_CONFIG_DIR = Join-Path $root 'config'
-    & ./public/install.ps1 -Version v0.2.1 -BinDir $bin
+    & ./public/install.ps1 -Version v0.2.2 -BinDir $bin
     $binary = Join-Path $bin 'cargo-leaderboard.exe'
     & $binary setup --nickname installer-test
     if ($LASTEXITCODE -ne 0) { throw 'Setup failed' }
     $config = Get-Content (Join-Path $env:CARGO_LEADERBOARD_CONFIG_DIR 'config.json') -Raw
-    & ./public/install.ps1 -Version v0.2.1 -BinDir $bin
+    & ./public/install.ps1 -Version v0.2.2 -BinDir $bin
     if ((Get-Content (Join-Path $env:CARGO_LEADERBOARD_CONFIG_DIR 'config.json') -Raw) -ne $config) { throw 'Upgrade changed setup' }
     $original = (Get-FileHash $binary).Hash
     "$('0' * 64)  $name" | Set-Content $sumPath
     $rejected = $false
-    try { & ./public/install.ps1 -Version v0.2.1 -BinDir $bin } catch { $rejected = $true }
+    try { & ./public/install.ps1 -Version v0.2.2 -BinDir $bin } catch { $rejected = $true }
     if (-not $rejected) { throw 'Corrupt checksum accepted' }
     if ((Get-FileHash $binary).Hash -ne $original) { throw 'Failed update changed binary' }
     Write-Host 'Windows installer: fresh install, upgrade, saved setup, checksum rejection, paths with spaces passed.'

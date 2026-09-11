@@ -47,7 +47,7 @@ jobs:
           python3 scripts/test-install.py target/${{ matrix.target }}/release/cargo-leaderboard
       - name: Package Windows binary and test installer
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: powershell
         run: |
           New-Item -ItemType Directory dist | Out-Null
           Compress-Archive -Path target/${{ matrix.target }}/release/cargo-leaderboard.exe -DestinationPath dist/cargo-leaderboard-${{ matrix.target }}.zip

@@ -34,7 +34,7 @@ try {
     $destination = Join-Path $BinDir 'cargo-leaderboard.exe'
     $staged = Join-Path $BinDir ('.cargo-leaderboard-' + [guid]::NewGuid().ToString() + '.exe')
     Copy-Item -LiteralPath $binary -Destination $staged
-    if (Test-Path -LiteralPath $destination) { [IO.File]::Replace($staged, $destination, $null) }
+    if (Test-Path -LiteralPath $destination) { [IO.File]::Replace($staged, $destination, [System.Management.Automation.Language.NullString]::Value) }
     else { [IO.File]::Move($staged, $destination) }
     $staged = $null
     Write-Host "Installed to $destination"

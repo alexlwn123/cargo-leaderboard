@@ -37,7 +37,7 @@ cp "$INSTALL_TEST_MIRROR/${url##*/}" "$output"
            'INSTALL_TEST_MIRROR': str(mirror), 'CARGO_LEADERBOARD_CONFIG_DIR': str(root / 'config')}
     for key in ('CARGO_LEADERBOARD_API_URL', 'CARGO_LEADERBOARD_NICKNAME', 'CARGO_LEADERBOARD_TOKEN'):
         env.pop(key, None)
-    command = ['sh', str(installer), '--version', 'v0.2.1', '--bin-dir', str(dest)]
+    command = ['sh', str(installer), '--version', 'v0.2.2', '--bin-dir', str(dest)]
     subprocess.run(command, env=env, check=True)
     installed = dest / 'cargo-leaderboard'
     subprocess.run([str(installed), 'setup', '--nickname', 'installer-test'], env=env, check=True)

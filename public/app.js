@@ -234,7 +234,7 @@ document.querySelectorAll("[data-copy]").forEach((button) =>
 const installCommands = {
   unix: "curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh\nsh /tmp/cargo-leaderboard-install.sh",
   windows: 'Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\\cargo-leaderboard-install.ps1"\npowershell -ExecutionPolicy Bypass -File "$env:TEMP\\cargo-leaderboard-install.ps1"',
-  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.1 --locked",
+  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.2 --locked",
 };
 document.querySelectorAll("[data-install]").forEach((button) =>
   button.addEventListener("click", () => {
