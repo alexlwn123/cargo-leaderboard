@@ -20,7 +20,11 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Save your public nickname and server for future terminals.
+    /// Connect your GitHub account through your browser.
+    Login(LoginArgs),
+    /// Revoke this CLI credential and remove it from this machine.
+    Logout,
+    /// Configure a nickname for a local, self-hosted SQLite board.
     Setup(SetupArgs),
     /// Check configuration, Cargo, and the server without submitting anything.
     Doctor,
@@ -30,6 +34,16 @@ enum Commands {
     Clean(BuildArgs),
     /// Run a local SQLite-backed leaderboard server.
     Serve(ServeArgs),
+}
+
+#[derive(Debug, Args)]
+struct LoginArgs {
+    /// Connect to another GitHub-authenticated leaderboard.
+    #[arg(long)]
+    api_url: Option<String>,
+    /// Print the approval URL without opening a browser (useful for agents and SSH).
+    #[arg(long)]
+    no_browser: bool,
 }
 
 #[derive(Debug, Args)]
@@ -72,6 +86,14 @@ pub async fn run() -> Result<u8> {
     let cli = Cli::parse_from(args);
 
     match cli.command {
+        Commands::Login(args) => {
+            crate::auth::login(args.api_url, args.no_browser).await?;
+            Ok(0)
+        }
+        Commands::Logout => {
+            crate::auth::logout().await?;
+            Ok(0)
+        }
         Commands::Setup(args) => {
             crate::config::setup(args.nickname, args.api_url)?;
             Ok(0)

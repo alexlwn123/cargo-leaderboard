@@ -1,10 +1,10 @@
 # Cargo Leaderboard
 
-> A community leaderboard for the artifact footprint of Rust builds, bytes reclaimed by cargo clean, and build duration. Nicknames and scores are self-reported.
+> A community leaderboard for the artifact footprint of Rust builds, bytes reclaimed by cargo clean, and build duration. GitHub identities are verified; scores are self-reported.
 
 ## Set up a Rust project
 
-- [Agent setup instructions](/agents.md): Read when installing the CLI, configuring a nickname or server, or making and verifying a first submission. Includes noninteractive setup and existing-configuration handling.
+- [Agent setup instructions](/agents.md): Read when installing the CLI, connecting a GitHub account or selecting a server, or making and verifying a first submission. Includes the browser approval step, existing-login handling, and submission verification.
 - [Manual CLI guide](https://github.com/alexlwn123/cargo-leaderboard#manual-setup): Platform installers, configuration, measurements, privacy, and troubleshooting.
 
 ## Explore

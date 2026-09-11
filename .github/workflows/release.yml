@@ -75,6 +75,6 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           sha256sum *.tar.gz *.zip > SHA256SUMS
-          gh release create "$RELEASE_TAG" --verify-tag --title "Cargo Leaderboard $RELEASE_TAG" --notes 'Install a prebuilt binary for macOS, Linux, or Windows. Run cargo leaderboard setup once to save your nickname, then cargo leaderboard build in your Rust project. cargo leaderboard doctor checks your setup without submitting a run. Archives are verified with SHA256SUMS by the installers. Source installation remains available. See the README for installation, updates, and privacy details.' --draft
+          gh release create "$RELEASE_TAG" --verify-tag --title "Cargo Leaderboard $RELEASE_TAG" --notes 'Install a prebuilt binary for macOS, Linux, or Windows. Run cargo leaderboard login once to connect your GitHub account, then cargo leaderboard build in your Rust project. cargo leaderboard doctor checks your setup without submitting a run. Archives are verified with SHA256SUMS by the installers. Source installation remains available. See the README for installation, updates, and privacy details.' --draft
           gh release upload "$RELEASE_TAG" ./*
           gh release edit "$RELEASE_TAG" --draft=false --latest

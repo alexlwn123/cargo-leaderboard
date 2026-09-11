@@ -42,8 +42,8 @@ try {
         Write-Host "Add this directory to your user PATH, then reopen your terminal: $BinDir"
     }
     if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) { Write-Host 'Install Rust from https://rustup.rs and reopen your terminal.' }
-    Write-Host 'Next: cargo leaderboard setup'
-    Write-Host 'Update later by running this installer again. Your saved nickname is preserved.'
+    Write-Host 'Next: cargo leaderboard login'
+    Write-Host 'Update later by running this installer again. Your saved login is preserved.'
 } finally {
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
     if ($staged) { Remove-Item -LiteralPath $staged -Force -ErrorAction SilentlyContinue }

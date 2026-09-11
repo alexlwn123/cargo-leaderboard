@@ -288,7 +288,7 @@ fn first_run_and_noninteractive_setup_explain_next_steps() -> Result<()> {
     let dir = TempDir::new()?;
     let output = isolated_cli(dir.path())?.arg("build").output()?;
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("cargo leaderboard setup"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("cargo leaderboard login"));
     let output = isolated_cli(dir.path())?
         .arg("setup")
         .write_stdin("")

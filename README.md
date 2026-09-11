@@ -10,7 +10,7 @@ Open your Rust project in an agent with terminal access and paste:
 
 > Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.
 
-The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, noninteractive configuration, existing settings, and verifying a real submission. This is the default setup flow on the website; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
+The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. This is the default setup flow on the website; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
 
 ## Manual setup
 
@@ -37,8 +37,8 @@ You can inspect the downloaded script before running it. Installers download the
 **Then, on any platform:**
 
 ```sh
-cargo leaderboard setup
-# Enter a public nickname when prompted. Saved for future terminals.
+cargo leaderboard login
+# Sign in with GitHub and approve the code shown in your terminal.
 cargo leaderboard doctor
 
 # Run from your Rust project:
@@ -46,12 +46,12 @@ cargo leaderboard build
 cargo leaderboard clean
 ```
 
-For scripts, use `cargo leaderboard setup --nickname "your-name"`. No account, API key, or server configuration is required for the public board. Setup explains what's public before asking for your nickname. Nicknames are labels, not reserved accounts.
+For coding agents or SSH, use `cargo leaderboard login --no-browser`: open the printed URL yourself, sign in with GitHub, and approve the matching code. The CLI saves its own revocable token for future terminals. No repository scopes are requested. Existing nickname-only clients must update and log in; anonymous public submissions are no longer accepted.
 
 **Build from source** with a current stable Rust toolchain and Git (also the fallback for unsupported platforms):
 
 ```sh
-cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.2 --locked
+cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.3.0 --locked
 ```
 
 `clean` runs the real `cargo clean` and deletes its build artifacts. The wrapper never cleans automatically before a build.
@@ -70,20 +70,22 @@ Both `cargo leaderboard …` and `cargo-leaderboard …` work. A failed Cargo co
 
 ## Configuration, updates, and troubleshooting
 
-Run `cargo leaderboard setup` again to change your nickname. It replaces your saved settings and selects the public board unless you supply `--api-url https://your-board.example`. To use the local server:
+Run `cargo leaderboard login` to connect or switch your GitHub account. Add `--api-url https://your-board.example` for another authenticated board. Tokens expire after 90 days. `cargo leaderboard logout` revokes this machine's token; the [account page](https://cargo-leaderboard.vercel.app/account.html) can revoke all CLI access. Signing out of the website leaves CLI credentials active.
+
+The standalone SQLite server retains nickname setup:
 
 ```sh
 cargo leaderboard setup --nickname local --api-url http://127.0.0.1:3000
 ```
 
-Settings live at `$XDG_CONFIG_HOME/cargo-leaderboard/config.json` (otherwise `~/.config/cargo-leaderboard/config.json`) on macOS/Linux, or `%APPDATA%\cargo-leaderboard\config.json` on Windows. `CARGO_LEADERBOARD_CONFIG_DIR` overrides that directory. Files are replaced atomically; tokens are never saved.
+Settings and CLI credentials live at `$XDG_CONFIG_HOME/cargo-leaderboard/config.json` (otherwise `~/.config/cargo-leaderboard/config.json`) on macOS/Linux, or `%APPDATA%\cargo-leaderboard\config.json` on Windows. `CARGO_LEADERBOARD_CONFIG_DIR` overrides that directory. Files are replaced atomically and use owner-only permissions on Unix; Windows inherits the user's directory ACL. Keep this file private. Local nickname setup replaces saved login settings.
 
-Environment variables `CARGO_LEADERBOARD_NICKNAME` and `CARGO_LEADERBOARD_API_URL` take precedence over saved settings. The server defaults to `https://cargo-leaderboard.vercel.app`. Existing environment-based setups continue to work. Private boards can use `CARGO_LEADERBOARD_TOKEN` in the environment.
+`CARGO_LEADERBOARD_API_URL` and `CARGO_LEADERBOARD_TOKEN` override saved values. Saved credentials are never forwarded to a different server. For CI, supply a Cargo Leaderboard CLI token through your CI secret store. `CARGO_LEADERBOARD_NICKNAME` still works for local SQLite boards; it cannot override your verified GitHub identity on the public server.
 
 - **Update:** run the installer again. It preserves your settings and keeps the existing binary if a download or checksum fails. Stop running CLI/server processes first on Windows.
-- **Pin a version:** pass `--version v0.2.2` to the shell installer or `-Version v0.2.2` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
+- **Pin a version:** pass `--version v0.3.0` to the shell installer or `-Version v0.3.0` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
 - **Command not found:** check that the installer directory is in PATH and reopen the terminal. `cargo --version` should work too; `rustup show` diagnoses a missing toolchain.
-- **Connection/configuration trouble:** `cargo leaderboard doctor` checks the effective nickname, server URL, Cargo, and the server's read endpoint without publishing anything. Submission credentials and rate limits are only checked on submission. Unset old environment overrides if setup changes don't take effect.
+- **Connection/configuration trouble:** `cargo leaderboard doctor` verifies the saved GitHub credential, server URL, Cargo, and connectivity without publishing anything. Quotas are checked when submitting. Unset old environment overrides if setup changes don't take effect.
 - **Remove:** delete `cargo-leaderboard` (Windows: `cargo-leaderboard.exe`) from the install directory. Optionally delete the config file above. For source installations, use `cargo uninstall cargo-leaderboard`.
 
 ## Releasing the CLI
@@ -98,7 +100,7 @@ Update the package version and lockfile, run the checks below, then push a match
 | Biggest cleans | Nonnegative difference between directory sizes before and after a successful clean |
 | Longest waits | Wall-clock milliseconds spent running a successful `cargo build` |
 
-The board keeps each nickname/project pair's highest score for each metric. Ties use the newest finish time, then event ID. Empty footprints and zero-byte cleans don't rank. Repeated event IDs are idempotent.
+The board keeps each GitHub account/project pair's highest score for each metric. Ties use the newest finish time, then event ID. Empty footprints and zero-byte cleans don't rank. Repeated event IDs are idempotent.
 
 Measurements include accumulated dependencies, incremental caches, other profiles and, when shared, other projects. A release build's footprint can therefore include existing debug artifacts. The profile identifies the command, not the contents of the entire directory. This is a fun comparison, not a controlled benchmark.
 
@@ -106,9 +108,15 @@ Cargo metadata resolves workspaces, manifest paths, environment configuration, c
 
 ## Privacy and trust
 
-Submissions publish a nickname, project label, before/after byte counts, scored bytes, file count, command, duration, timestamps, profile, OS/architecture, and Cargo/client versions. No source code, remote URL credentials or local paths are uploaded. The default project label comes from `origin`'s owner/repository, then Cargo metadata, then the directory name. Use `--repo` to replace a private label, or `--no-submit` to keep all measurements local.
+Submissions publish a GitHub account, project label, before/after byte counts, scored bytes, file count, command, duration, timestamps, profile, OS/architecture, and Cargo/client versions. No source code, remote URL credentials or local paths are uploaded. The default project label comes from `origin`'s owner/repository, then Cargo metadata, then the directory name. Use `--repo` to replace a private label, or `--no-submit` to keep all measurements local.
 
-Nicknames and scores are **self-reported and unverified**. There are no accounts or ownership claims. Public submissions have validation, a 16 KiB body limit, UUID deduplication and a persistent limit of 30 submissions per IP per hour. The rate limiter stores an HMAC of the IP, not the raw IP, and removes stale buckets after two days when new submissions arrive. Hosting providers may retain their own request logs. Administrators can remove abusive events by UUID using SQL. A private installation can set `CARGO_LEADERBOARD_TOKEN` on the server and client to require a bearer token.
+The public server verifies identity through GitHub OAuth (state binding and PKCE), keys scores by GitHub's stable account ID, and ignores client-supplied nicknames. GitHub usernames update when users sign in again. Scores and repository ownership are still self-reported: authentication is not proof of a measurement or ownership of its project label.
+
+Submissions require a signed, revocable CLI token and have validation, a 16 KiB body limit, UUID deduplication, and persistent limits of **30 requests per account per hour** and **120 per IP per hour**. Failed/repeated submission requests also consume quota. Login starts are limited to 30 per IP per hour; code approvals to 15 per account per hour. Device codes expire after ten minutes, are single-use, and poll at most every five seconds. Account limits are shared across tokens. Browser mutations require same-origin CSRF proof. Random or missing submission credentials are rejected before database access.
+
+Only hashes of app credentials and IPs are stored. GitHub access tokens are used for a single public identity lookup, then discarded. Browser sessions expire after 30 days. Expired auth records and stale quota buckets are pruned when new logins start. GitHub authentication reduces anonymous write abuse; it does not eliminate denial of service, distributed account abuse, or fabricated measurements. Keep Vercel's edge protections enabled and add WAF rate limits if traffic warrants them. Hosting providers may retain request logs.
+
+Pre-authentication events are retained with no account ID and excluded from the verified board. Never automatically claim them by matching a nickname. An administrator may attach specific, independently verified historical event IDs to an account; no public claiming endpoint exists.
 
 ## Run locally
 
@@ -122,7 +130,7 @@ export CARGO_LEADERBOARD_NICKNAME="local"
 cargo run -- build
 ```
 
-Open http://127.0.0.1:3000. The server creates `leaderboard.db` on first launch and migrates databases from the original duration-only prototype. Legacy timing records remain visible in the API's timing board with unknown size. Use `--database-url` to select another SQLite database. `--auth-token` protects local submissions. The SQLite server is intended for local/self-hosted use and does not implement the hosted IP rate limiter.
+Open http://127.0.0.1:3000. The server creates `leaderboard.db` on first launch and migrates databases from the original duration-only prototype. Legacy timing records remain visible in the API's timing board with unknown size. Use `--database-url` to select another SQLite database. `--auth-token` protects local submissions. The SQLite server is intended for local/self-hosted use and does not implement GitHub authentication or the hosted rate limiter.
 
 For work on the Vercel handlers, use Node 22.16+ or 24 and the project database:
 
@@ -138,7 +146,7 @@ The development server loads `.env.local`; never commit it. Local SQLite and hos
 
 ## API
 
-- `POST /v1/build-events`: accept one validated successful build or clean event. Hosted responses are `201` (created), `200` (duplicate), `400` (invalid event), `401` (private server auth), `413` (body too large), `415` (wrong content type), or `429` (rate limited). Server/storage failures return `503` on Vercel. SQLite returns `201` for duplicate IDs and uses its native error statuses.
+- `POST /v1/build-events`: accept one validated successful build or clean event. Hosted responses are `201` (created), `200` (duplicate), `400` (invalid event), `401` (missing, invalid, expired or revoked CLI login), `413` (body too large), `415` (wrong content type), or `429` (rate limited). Server/storage failures return `503` on Vercel. SQLite returns `201` for duplicate IDs and uses its native error statuses.
 - `GET /v1/leaderboard?metric=largest_build&limit=100`: public ranked results. Other metrics: `largest_clean`, `longest_single_build`. Limits are clamped to 1–200. Hosted defaults to size; the SQLite API retains its prototype default of build duration. The UI always selects an explicit metric. Hosted rankings may take up to 45 seconds to refresh because of CDN caching.
 
 The event shape is defined in `src/types.rs` and validated by `web/contract.mjs` on Vercel. Measurements must be nonnegative safe integers, and scored bytes must match the before/after definition. Event UUIDs cannot be reused to overwrite scores.
@@ -148,10 +156,10 @@ The event shape is defined in `src/types.rs` and validated by `web/contract.mjs`
 The Vercel project uses the **Other** preset: static files in `public/` and Node functions in `api/`. It does not run the persistent Rust/SQLite server. Neon Postgres is provisioned through Vercel Marketplace for durable submissions.
 
 1. Link the project to your Vercel team and install the Neon integration.
-2. Pull the generated environment variables. Set `RATE_LIMIT_SALT` to a random secret in production and preview. Optionally set `CARGO_LEADERBOARD_TOKEN` for a private board.
+2. Pull the generated environment variables. Set `RATE_LIMIT_SALT` to a random secret in production and preview. Set `APP_ORIGIN`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and a random `AUTH_SECRET` of at least 32 characters (see `.env.example`). Register a GitHub OAuth app with callback `https://YOUR_DOMAIN/auth/callback` and homepage `https://YOUR_DOMAIN`. Request no scopes. Use separate credentials and origins for previews.
 3. Run `npm run db:migrate` against the intended database before deployment. Migrations are explicit and idempotent, not run during every request or build. Use separate databases/Neon branches for isolated development and previews.
 4. Run `npm test && npm run build`, then `npx vercel@latest deploy --prod`.
-5. The website adds its own URL to the setup command for self-hosted boards. Connect the GitHub repository in Vercel for automatic deployments from `main`.
+5. The website adds its own URL to the login command for self-hosted boards. Connect the GitHub repository in Vercel for automatic deployments from `main`.
 
 ## Checks
 
@@ -163,4 +171,8 @@ npm test
 npm run build
 ```
 
-GitHub Actions runs the Rust and JavaScript checks. Rust integration tests exercise real builds and cleans in isolated temporary directories, custom artifact/intermediate directories, Cargo subcommand invocation, privacy overrides and network-failure behavior. API tests cover validation, authentication, ranking, legacy migration and duplicate submissions.
+GitHub Actions runs the Rust and JavaScript checks. Rust integration tests exercise real builds and cleans in isolated temporary directories, custom artifact/intermediate directories, Cargo subcommand invocation, privacy overrides and network-failure behavior. API tests cover validation, CSRF, state replay, device code reuse/expiry, account identity, token revocation, and concurrent rate limiting. Set `TEST_DATABASE_URL` to an isolated disposable PostgreSQL database to run the full auth integration suite; it truncates only that test database. CI provisions PostgreSQL 17 and always runs it.
+
+### Authentication endpoints
+
+`GET /auth/login` starts GitHub sign-in; `/auth/callback` completes it. `GET /auth/session` returns the browser account and CSRF proof (never a CLI token). `POST /auth/device-start` returns the CLI's secret device code and public approval code. `POST /auth/device-poll` exchanges an approved device code once for a CLI credential. `POST /auth/device-approve` requires a browser session and CSRF proof. `GET /auth/me` validates a CLI bearer token. `POST /auth/cli-logout` revokes that token; `/auth/revoke-all` revokes all of the browser account's CLI tokens. `/auth/logout` ends only the browser session. All auth responses are uncached.

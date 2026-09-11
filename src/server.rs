@@ -56,6 +56,23 @@ pub async fn run_server(
 pub fn app(state: AppState) -> Router {
     Router::new()
         .route(
+            "/auth/session",
+            get(|| async { Json(serde_json::json!({"user": null, "local": true})) }),
+        )
+        .route(
+            "/account.html",
+            get(|| async { Html(include_str!("../public/account.html")) }),
+        )
+        .route(
+            "/account.js",
+            get(|| async {
+                (
+                    [("content-type", "text/javascript")],
+                    include_str!("../public/account.js"),
+                )
+            }),
+        )
+        .route(
             "/",
             get(|| async { Html(include_str!("../public/index.html")) }),
         )

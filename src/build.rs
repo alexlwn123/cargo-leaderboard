@@ -158,6 +158,7 @@ async fn cargo_version() -> Result<String> {
 
 async fn report_event(config: &BuildConfig, event: &BuildEvent) -> Result<()> {
     let client = Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
         .timeout(std::time::Duration::from_secs(5))
         .build()
         .context("failed to construct HTTP client")?;
@@ -169,10 +170,14 @@ async fn report_event(config: &BuildConfig, event: &BuildEvent) -> Result<()> {
         request = request.bearer_auth(token);
     }
 
-    request
-        .send()
-        .await
-        .context("request failed")?
+    let response = request.send().await.context("request failed")?;
+    if response.status().as_u16() == 401 {
+        anyhow::bail!("GitHub login expired or is missing. Run cargo leaderboard login");
+    }
+    if response.status().as_u16() == 429 {
+        anyhow::bail!("Submission rate limit reached. Try again next hour");
+    }
+    response
         .error_for_status()
         .context("server rejected build event")?;
 
