@@ -1,11 +1,13 @@
 const $ = selector => document.querySelector(selector);
 let session;
+let refresh;
 const code = new URL(location.href).searchParams.get('code');
 if (code && /^[a-f0-9]{10}$/i.test(code)) {
   $('#device-code').value = code.slice(0, 5).toUpperCase() + '-' + code.slice(5).toUpperCase();
   $('#sign-in').href = '/auth/login?user_code=' + encodeURIComponent(code);
 }
 async function load() {
+  clearTimeout(refresh);
   try {
     const res = await fetch('/auth/session', { cache: 'no-store' });
     if (!res.ok) throw new Error('Could not check your login. Refresh to try again.');
@@ -18,8 +20,10 @@ async function load() {
     $('#signed-in').hidden = !session.user;
     $('#account-status').textContent = session.user ? `Signed in as @${session.user.github_login}` : 'Connect your GitHub account to get started.';
     if (session.user) {
-      $('#device-count').textContent = `${session.devices} active CLI ${session.devices === 1 ? 'login' : 'logins'}`;
-      $('#revoke').disabled = session.devices === 0;
+      $('#device-count').textContent = `${session.devices} active CLI ${session.devices === 1 ? 'login' : 'logins'}` +
+        (session.pending_devices ? ` · ${session.pending_devices} waiting to connect` : '');
+      $('#revoke').disabled = session.devices === 0 && !session.pending_devices;
+      if (session.pending_devices) refresh = setTimeout(load, 5000);
     }
   } catch (error) { $('#account-status').textContent = error.message; }
 }
