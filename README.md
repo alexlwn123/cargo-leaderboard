@@ -11,15 +11,17 @@ Install [Rust](https://rustup.rs) if you don't already have it. Download the CLI
 **macOS / Linux** (Apple Silicon or Intel; Linux ARM64 or x64):
 
 ```sh
-curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh
+curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&
 sh /tmp/cargo-leaderboard-install.sh
 ```
 
 **Windows x64** (PowerShell):
 
 ```powershell
-Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\cargo-leaderboard-install.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\cargo-leaderboard-install.ps1"
+& {
+  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\cargo-leaderboard-install.ps1" -ErrorAction Stop
+  powershell -ExecutionPolicy Bypass -File "$env:TEMP\cargo-leaderboard-install.ps1"
+}
 ```
 
 You can inspect the downloaded script before running it. Installers download the latest [GitHub release](https://github.com/alexlwn123/cargo-leaderboard/releases/latest), verify its SHA-256 checksum, and install to `~/.cargo/bin` (or `$CARGO_HOME/bin`). They never require sudo or edit your shell profile. If that directory isn't in PATH, add it and reopen your terminal. Archives and `SHA256SUMS` are also available for manual installation. Linux binaries are statically linked with musl.
