@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { HttpError } from "./contract.mjs";
 export function send(res, status, data) {
   res.statusCode = status;
@@ -55,14 +55,6 @@ export async function readEvent(req) {
   } catch {
     throw new HttpError(400, "Invalid JSON.");
   }
-}
-export function authorize(req) {
-  const expected = process.env.CARGO_LEADERBOARD_TOKEN;
-  if (!expected) return;
-  const provided = Buffer.from(req.headers.authorization || "");
-  const secret = Buffer.from(`Bearer ${expected}`);
-  if (provided.length !== secret.length || !timingSafeEqual(provided, secret))
-    throw new HttpError(401, "Missing or invalid bearer token.");
 }
 export function clientHash(req) {
   // Vercel overwrites x-vercel-forwarded-for. Never trust a user-supplied x-forwarded-for.

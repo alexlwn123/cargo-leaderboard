@@ -10,7 +10,7 @@ main() {
         [ "$#" -ge 2 ] || { echo "Missing value for $1" >&2; exit 1; }
         case "$1" in --version) version=$2 ;; --bin-dir) bin_dir=$2 ;; esac
         shift 2 ;;
-      *) echo "Usage: sh install.sh [--version v0.2.2] [--bin-dir DIRECTORY]" >&2; exit 1 ;;
+      *) echo "Usage: sh install.sh [--version v0.3.0] [--bin-dir DIRECTORY]" >&2; exit 1 ;;
     esac
   done
   case "$version" in latest|v[0-9]*) ;; *) echo 'Version must be latest or a v-prefixed release tag.' >&2; exit 1 ;; esac
@@ -62,7 +62,7 @@ main() {
   if ! command -v cargo >/dev/null 2>&1; then
     echo 'Rust is required to measure builds. Install it from https://rustup.rs and reopen your terminal.'
   fi
-  echo 'Next: cargo leaderboard setup'
-  echo 'Update later by running this installer again. Your saved nickname is preserved.'
+  echo 'Next: cargo leaderboard login'
+  echo 'Update later by running this installer again. Your saved login is preserved.'
 }
 main "$@"

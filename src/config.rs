@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_API_URL: &str = "https://cargo-leaderboard.vercel.app";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct BuildConfig {
     pub api_url: String,
     pub nickname: String,
@@ -15,12 +15,16 @@ pub struct BuildConfig {
 }
 
 #[derive(Default, Deserialize, Serialize)]
-struct SavedConfig {
-    nickname: Option<String>,
-    api_url: Option<String>,
+pub(crate) struct SavedConfig {
+    pub nickname: Option<String>,
+    pub api_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github_login: Option<String>,
 }
 
-fn config_path() -> Result<PathBuf> {
+pub(crate) fn config_path() -> Result<PathBuf> {
     let directory = if let Some(path) = std::env::var_os("CARGO_LEADERBOARD_CONFIG_DIR") {
         PathBuf::from(path)
     } else if cfg!(windows) {
@@ -46,7 +50,7 @@ fn config_path() -> Result<PathBuf> {
     Ok(directory.join("config.json"))
 }
 
-fn read_saved() -> Result<SavedConfig> {
+pub(crate) fn read_saved() -> Result<SavedConfig> {
     let path = config_path()?;
     match std::fs::read(&path) {
         Ok(data) => serde_json::from_slice(&data)
@@ -66,7 +70,7 @@ fn validate_nickname(nickname: &str) -> Result<()> {
     Ok(())
 }
 
-fn validate_url(value: &str) -> Result<String> {
+pub(crate) fn validate_url(value: &str) -> Result<String> {
     let url = url::Url::parse(value).context("Server URL must be an absolute HTTP(S) URL")?;
     if !matches!(url.scheme(), "http" | "https")
         || url.host_str().is_none()
@@ -82,28 +86,54 @@ fn validate_url(value: &str) -> Result<String> {
 
 impl BuildConfig {
     pub fn from_env() -> Result<Self> {
-        let env_nickname = std::env::var("CARGO_LEADERBOARD_NICKNAME").ok();
-        let env_url = std::env::var("CARGO_LEADERBOARD_API_URL").ok();
-        let saved = if env_nickname.is_some() && env_url.is_some() {
-            SavedConfig::default()
-        } else {
-            read_saved()?
-        };
-        let nickname = env_nickname.or(saved.nickname).context(
-            "Choose a public nickname first: cargo leaderboard setup\nFor scripts: cargo leaderboard setup --nickname YOUR_NAME\nTo measure without publishing: cargo leaderboard build --no-submit",
-        )?;
-        validate_nickname(&nickname)?;
+        let saved = read_saved()?;
         let api_url = validate_url(
-            &env_url
-                .or(saved.api_url)
+            &std::env::var("CARGO_LEADERBOARD_API_URL")
+                .ok()
+                .or(saved.api_url.clone())
                 .unwrap_or_else(|| DEFAULT_API_URL.to_owned()),
         )?;
+        // A saved credential belongs to exactly one server. Never forward it to an override.
+        let saved_token = if saved.api_url.as_deref() == Some(api_url.as_str()) {
+            saved.token
+        } else {
+            None
+        };
+        let token = std::env::var("CARGO_LEADERBOARD_TOKEN")
+            .ok()
+            .or(saved_token);
+        if api_url == DEFAULT_API_URL && token.is_none() {
+            bail!(
+                "GitHub login required: cargo leaderboard login\nTo measure without publishing: cargo leaderboard build --no-submit"
+            );
+        }
+        let nickname = saved.github_login.filter(|_| token.is_some())
+            .or_else(|| std::env::var("CARGO_LEADERBOARD_NICKNAME").ok())
+            .or(saved.nickname).or_else(|| token.as_ref().map(|_| "github".to_owned()))
+            .context("Run cargo leaderboard login, or cargo leaderboard setup --nickname YOUR_NAME --api-url YOUR_LOCAL_SERVER for a local board")?;
+        validate_nickname(&nickname)?;
         Ok(Self {
             api_url,
             nickname,
-            token: std::env::var("CARGO_LEADERBOARD_TOKEN").ok(),
+            token,
         })
     }
+}
+
+pub(crate) fn save(saved: &SavedConfig) -> Result<()> {
+    let path = config_path()?;
+    let directory = path
+        .parent()
+        .context("Configuration directory is missing")?;
+    std::fs::create_dir_all(directory)?;
+    // NamedTempFile uses owner-only permissions on Unix; replacement preserves that mode.
+    let mut file = tempfile::NamedTempFile::new_in(directory)?;
+    serde_json::to_writer_pretty(&mut file, saved)?;
+    file.write_all(b"\n")?;
+    file.as_file().sync_all()?;
+    file.persist(&path)
+        .with_context(|| format!("Cannot save {}", path.display()))?;
+    Ok(())
 }
 
 pub fn setup(nickname: Option<String>, api_url: Option<String>) -> Result<()> {
@@ -127,23 +157,11 @@ pub fn setup(nickname: Option<String>, api_url: Option<String>) -> Result<()> {
     // Setup deliberately replaces broken configuration and defaults to the public server.
     let api_url = validate_url(api_url.as_deref().unwrap_or(DEFAULT_API_URL))?;
     let path = config_path()?;
-    let directory = path
-        .parent()
-        .context("Configuration directory is missing")?;
-    std::fs::create_dir_all(directory)
-        .with_context(|| format!("Cannot create {}", directory.display()))?;
-    let mut file = tempfile::NamedTempFile::new_in(directory)?;
-    serde_json::to_writer_pretty(
-        &mut file,
-        &SavedConfig {
-            nickname: Some(nickname.clone()),
-            api_url: Some(api_url.clone()),
-        },
-    )?;
-    file.write_all(b"\n")?;
-    file.as_file().sync_all()?;
-    file.persist(&path)
-        .with_context(|| format!("Cannot save {}", path.display()))?;
+    save(&SavedConfig {
+        nickname: Some(nickname.clone()),
+        api_url: Some(api_url.clone()),
+        ..Default::default()
+    })?;
     println!(
         "Saved nickname: {nickname}\nServer: {api_url}\nConfiguration: {}",
         path.display()
@@ -157,7 +175,7 @@ pub fn setup(nickname: Option<String>, api_url: Option<String>) -> Result<()> {
         );
     }
     println!(
-        "\nReady. Inside a Rust project, run: cargo leaderboard build\nCheck your connection: cargo leaderboard doctor"
+        "\nPublic board: run cargo leaderboard login to connect GitHub.\nLocal board: cargo leaderboard build\nCheck your connection: cargo leaderboard doctor"
     );
     Ok(())
 }
@@ -170,6 +188,15 @@ pub async fn doctor() -> Result<()> {
         config.api_url,
         config_path()?.display()
     );
+    if config
+        .token
+        .as_ref()
+        .is_some_and(|token| token.starts_with("clb_cli_"))
+        || config.api_url == DEFAULT_API_URL
+    {
+        let user = crate::auth::account(&config).await?;
+        println!("Verified GitHub account: @{}", user.github_login);
+    }
     let cargo = tokio::process::Command::new("cargo").arg("--version").output().await
         .context("Cargo is missing from PATH. Install Rust from https://rustup.rs, then reopen your terminal")?;
     if !cargo.status.success() {

@@ -2,13 +2,12 @@
 
 Use this guide when a user asks you to install Cargo Leaderboard or put their Rust project on the board. Complete setup in their project with your terminal tools. The public board is https://cargo-leaderboard.vercel.app; use a different server when the user's prompt specifies one.
 
-## 1. Establish the project and public identity
+## 1. Establish the project and destination
 
 - Locate the intended Rust workspace and its existing build instructions. Use the user's requested project, profile, and flags.
-- Reuse an existing public nickname from Cargo Leaderboard configuration or one the user provided. If it is missing, ask for it. Nicknames contain 1–40 characters and are self-reported, not reserved accounts.
-- Explain that submissions publish the nickname, project label, measurements, platform, and tool versions. Source code and local paths stay local. Use a project label the user has approved for public use, or the owner/repository name of a known public repository. If the project is private or its visibility is unclear, ask for a public label alongside the nickname. Pass that label with `--repo`.
+- Explain that submissions publish the GitHub account, project label, measurements, platform, and tool versions. Source code and local paths stay local. Use a project label the user has approved for public use, or the owner/repository name of a known public repository. If the project is private or its visibility is unclear, ask for a public label before submitting. Pass that label with `--repo`.
 
-Continue when the intended workspace, public nickname, project label, and destination are known. Reading this guide alone does not authorize publishing a project or deleting artifacts; follow the user's requested scope.
+Continue when the intended workspace, project label, and destination are known. Reading this guide alone does not authorize publishing a project or deleting artifacts; follow the user's requested scope.
 
 ## 2. Install or reuse the CLI
 
@@ -33,26 +32,29 @@ For Windows x64, use PowerShell:
 
 The installers select a native release, verify SHA-256, and install into the Cargo bin directory (`$CARGO_HOME/bin`, otherwise `~/.cargo/bin`; Windows defaults to `%USERPROFILE%\.cargo\bin`). They preserve saved settings on upgrades. If this directory is absent from your tool's PATH, add it to the environment of subsequent commands. Tell the user if their own terminal also needs its PATH updated. Treat download or checksum failures as installation failures.
 
-Available binaries: macOS Apple Silicon/Intel, Linux ARM64/x64, and Windows x64. For other platforms or source installation, use the current tagged source command in the [CLI README](https://github.com/alexlwn123/cargo-leaderboard#manual-setup). Run the installer again if an older CLI lacks `setup` or `doctor`.
+Available binaries: macOS Apple Silicon/Intel, Linux ARM64/x64, and Windows x64. For other platforms or source installation, use the current tagged source command in the [CLI README](https://github.com/alexlwn123/cargo-leaderboard#manual-setup). Use CLI 0.3.0 or newer. Run the installer again if `cargo leaderboard login --help` is unavailable.
 
 Continue when `cargo leaderboard --version` runs successfully in the environment you will use for the project.
 
-## 3. Configure without an interactive prompt
+## 3. Connect the user's GitHub account
 
-Run `cargo leaderboard doctor` to inspect effective configuration and connectivity. It prints the nickname and server, never the token. If the existing nickname and destination match the user's choices, keep them.
+Run `cargo leaderboard doctor` to check the saved login and server. Continue with an existing login only when it verifies the intended GitHub account and destination.
 
-When configuration is needed, quote the chosen values for the current shell and use:
+For a missing, expired, revoked, or old nickname-only setup, run:
 
 ```sh
-cargo leaderboard setup --nickname "PUBLIC_NICKNAME" --api-url "SERVER_URL"
-cargo leaderboard doctor
+cargo leaderboard login --no-browser --api-url "SERVER_URL"
 ```
 
-Replace both placeholders with the values established above. Always pass `--nickname` when using agent terminal tools; bare `setup` needs a human terminal. Pass `--api-url` explicitly so a self-hosted setup uses the intended board. Setup replaces saved settings, so preserve the chosen nickname and destination when changing either.
+Replace `SERVER_URL` with the intended board (normally `https://cargo-leaderboard.vercel.app`). The command prints an approval URL and confirmation code, then waits for up to ten minutes. Show that URL and code to the user and ask them to sign in with GitHub and approve the matching code. Keep the command running while they do so; poll it without starting another login. This browser approval is the one human step. For a human-operated terminal, omit `--no-browser` to open the browser automatically.
 
-`CARGO_LEADERBOARD_NICKNAME` and `CARGO_LEADERBOARD_API_URL` environment overrides take precedence over the file. Resolve conflicting overrides in your command environment and explain them to the user; rerunning setup alone cannot override them. A private board may also require `CARGO_LEADERBOARD_TOKEN`; keep that token in the environment and out of output and committed files.
+Complete authentication only after the CLI prints `Logged in as @USERNAME`. If it expires, retry login when the user is ready. Never fabricate approval, request GitHub passwords or personal access tokens, or read/print the saved credential. The CLI saves a revocable Cargo Leaderboard token in its user configuration, restricted to its selected server; it does not receive GitHub repository access.
 
-Continue when doctor reports the intended nickname and server and a successful connection. Doctor checks reads; it does not prove that a submission will be accepted. For setup-only requests, report setup complete here and provide the next build command.
+`CARGO_LEADERBOARD_API_URL` and `CARGO_LEADERBOARD_TOKEN` overrides take precedence over the saved server and token. Resolve conflicting overrides in the command environment without exposing credentials. A nickname override cannot change the verified public account.
+
+Run `cargo leaderboard doctor` again. Continue when it verifies the intended GitHub account, server, and connectivity. Doctor submits no measurements and does not test submission quotas. For setup-only requests, report completion here and provide the next build command.
+
+For the standalone Rust SQLite server, `doctor` checks connectivity without GitHub. Configure that local server with `cargo leaderboard setup --nickname "LOCAL_NAME" --api-url "LOCAL_SERVER_URL"`; it is separate from the public verified board.
 
 ## 4. Build, submit, and verify
 
@@ -72,11 +74,12 @@ Use the project's normal build profile unless the user asked for another. `cargo
 
 Verify both outcomes: the Cargo command succeeds **and** output includes `leaderboard: submitted to SERVER_URL`. A successful exit code alone is insufficient: measurement and reporting failures are warnings so they do not break a successful build. If there is a warning, report the submission as incomplete and diagnose its stated cause. There is no offline retry queue; avoid repeatedly rebuilding or sending invented events to force an entry.
 
-The board may take up to 45 seconds to refresh and retains only the best score per nickname/project. An existing higher score can remain after a successful submission. Finish with the measured footprint, nickname/project label, confirmed submission result, and the destination board link. If anything is blocked, identify the exact remaining step instead of claiming completion.
+The board may take up to 45 seconds to refresh and retains only the best score per GitHub account/project. An existing higher score can remain after a successful submission. Finish with the measured footprint, GitHub account/project label, confirmed submission result, and the destination board link. If anything is blocked, identify the exact remaining step instead of claiming completion.
 
 ## Reference
 
 - [Public leaderboard](https://cargo-leaderboard.vercel.app)
 - [CLI documentation, configuration paths, privacy, and API](https://github.com/alexlwn123/cargo-leaderboard#readme)
 - [Release binaries and SHA256SUMS](https://github.com/alexlwn123/cargo-leaderboard/releases/latest)
+- Manage/revoke CLI access: [Account page](/account.html); `cargo leaderboard logout` revokes this machine’s saved token.
 - Local measurement without publishing: `cargo leaderboard build --no-submit`.

@@ -4,21 +4,39 @@
   "buildCommand": "npm run build",
   "outputDirectory": "public",
   "installCommand": "npm ci",
-  "regions": ["iad1"],
+  "regions": [
+    "iad1"
+  ],
   "rewrites": [
-    { "source": "/v1/build-events", "destination": "/api/build-events" },
-    { "source": "/v1/leaderboard", "destination": "/api/leaderboard" }
+    {
+      "source": "/v1/build-events",
+      "destination": "/api/build-events"
+    },
+    {
+      "source": "/v1/leaderboard",
+      "destination": "/api/leaderboard"
+    },
+    {
+      "source": "/auth/:action",
+      "destination": "/api/auth?action=:action"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
         },
-        { "key": "X-Frame-Options", "value": "DENY" },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
@@ -28,7 +46,10 @@
     {
       "source": "/agents.md",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
       ]
     }
   ]

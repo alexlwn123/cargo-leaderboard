@@ -5,6 +5,8 @@ for (const path of [
   "public/index.html",
   "public/styles.css",
   "public/app.js",
+  "public/account.html",
+  "public/account.js",
   "public/favicon.svg",
   "public/install.sh",
   "public/install.ps1",
@@ -19,6 +21,9 @@ for (const file of [
   "web/contract.mjs",
   "web/database.mjs",
   "web/http.mjs",
+  "web/auth.mjs",
+  "api/auth.mjs",
+  "public/account.js",
 ]) {
   const result = spawnSync(process.execPath, ["--check", file], {
     stdio: "inherit",

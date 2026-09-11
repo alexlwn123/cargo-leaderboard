@@ -842,3 +842,25 @@ code {
 .manual-setup[open] summary { border-bottom: 1px solid #36415a; }
 .agent-setup .command-label { gap: 12px; }
 .agent-setup .copy { white-space: nowrap; }
+
+/* Account setup shares the board's typography and paper/card palette. */
+.account-page { max-width: 780px; padding-block: 64px 80px; }
+.account-page h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.06; letter-spacing: -2px; margin: 16px 0 24px; }
+.account-intro { font-size: 19px; max-width: 600px; }
+.account-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; margin: 32px 0; }
+.account-card h2 { font-size: 24px; margin-top: 28px; }
+.account-note { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.account-card label { display: block; font-weight: 700; margin: 20px 0 8px; }
+.account-card input { display: block; width: min(100%, 320px); padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; font: 24px ui-monospace, monospace; color: var(--ink); letter-spacing: 2px; text-transform: uppercase; }
+.account-card input:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.account-controls { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 20px; }
+.text-button { background: none; border: 0; padding: 8px 0; display: block; color: var(--blue); text-decoration: underline; text-underline-offset: 4px; }
+#account-status { font-weight: 700; margin-top: 0; }
+#action-status { color: var(--blue); font-weight: 600; }
+.site-header nav > #account-link { display: inline-flex; }
+@media (max-width: 600px) {
+  .account-page { padding-block: 32px; }
+  .account-card { padding: 22px; }
+  .site-header nav { gap: 12px; }
+  .site-header nav > a.button.small { display: none; }
+}

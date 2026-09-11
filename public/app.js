@@ -102,7 +102,11 @@ function render(entries) {
     const project = node("td");
     project.append(
       node("span", "project-name", entry.repo_slug),
-      node("span", "builder", `by ${entry.nickname}`),
+      (() => {
+        const builder = node("a", "builder", entry.github_login ? `@${entry.github_login}` : `Local: ${entry.nickname}`);
+        if (entry.github_login) builder.href = "https://github.com/" + encodeURIComponent(entry.github_login);
+        return builder;
+      })(),
     );
     row.append(project);
     const primary = node("td");
@@ -236,7 +240,7 @@ document.querySelectorAll("[data-copy]").forEach((button) =>
 const installCommands = {
   unix: "curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&\nsh /tmp/cargo-leaderboard-install.sh",
   windows: '& {\n  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\\cargo-leaderboard-install.ps1" -ErrorAction Stop\n  powershell -ExecutionPolicy Bypass -File "$env:TEMP\\cargo-leaderboard-install.ps1"\n}',
-  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.2 --locked",
+  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.3.0 --locked",
 };
 document.querySelectorAll("[data-install]").forEach((button) =>
   button.addEventListener("click", () => {
@@ -256,7 +260,7 @@ $("#agent-code").textContent =
   "/agents.md, then run a build and verify the submission." +
   (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
     " Use " + location.origin + " as the leaderboard server.");
-$("#config-code").textContent = "cargo leaderboard setup" +
+$("#config-code").textContent = "cargo leaderboard login" +
   (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
     " --api-url " + JSON.stringify(location.origin));
 load();
@@ -297,3 +301,11 @@ if (document.modelContext?.registerTool) {
     /* Browsers without an enabled registry still have the full UI. */
   }
 }
+
+fetch('/auth/session', { cache: 'no-store' }).then(res => res.ok ? res.json() : null).then(session => {
+  if (session?.user) document.querySelector('#account-link').textContent = '@' + session.user.github_login;
+  if (session?.local) {
+    $('#account-link').textContent = 'Local board';
+    $('#config-code').textContent = 'cargo leaderboard setup --nickname YOUR_NAME --api-url ' + JSON.stringify(location.origin);
+  }
+}).catch(() => {});

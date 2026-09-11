@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Your GitHub account — Cargo Leaderboard</title>
+  <link rel="icon" href="/favicon.svg" /><link rel="stylesheet" href="/styles.css" />
+  <script type="module" src="/account.js"></script>
+</head>
+<body>
+  <header class="site-header wrap">
+    <a class="brand" href="/"><span class="brand-icon" aria-hidden="true">c/</span><span>Cargo<br />Leaderboard</span></a>
+    <a href="/#leaderboard">Back to the board</a>
+  </header>
+  <main class="wrap account-page">
+    <p class="intro-label">Your builds. Your GitHub account.</p>
+    <h1>Claim your<br />corner of the board.</h1>
+    <p class="account-intro">Sign in with GitHub, then connect your CLI. Every submission carries your verified GitHub username.</p>
+    <section class="account-card" aria-label="GitHub account">
+      <p id="account-status" role="status">Checking your login…</p>
+      <div id="signed-out" hidden>
+        <a class="button" id="sign-in" href="/auth/login">Sign in with GitHub <span aria-hidden="true">↗</span></a>
+        <p class="account-note">We only use your public GitHub identity. No repository access is requested.</p>
+      </div>
+      <div id="signed-in" hidden>
+        <p class="account-note">Your account, project label, measurements, platform and tool versions are public when you submit. Source code stays on your machine.</p>
+        <form id="approve-form">
+          <h2>Connect your CLI</h2>
+          <p>Run <code>cargo leaderboard login</code> in your terminal, then approve its code here.</p>
+          <label for="device-code">Code shown in your terminal</label>
+          <input id="device-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" placeholder="ABCDE-12345" required pattern="[A-Fa-f0-9]{5}-?[A-Fa-f0-9]{5}" />
+          <p class="account-note">Only approve a code from a login you started yourself. Approval allows that CLI to submit measurements as you for 90 days.</p>
+          <button type="submit" class="button" id="approve">Approve this CLI</button>
+        </form>
+        <p id="action-status" role="status" aria-live="polite"></p>
+        <div class="account-controls">
+          <p id="device-count"></p>
+          <button type="button" id="revoke" class="text-button">Revoke all CLI access</button>
+          <button type="button" id="sign-out" class="text-button">Sign out of the website</button>
+        </div>
+      </div>
+    </section>
+    <p class="account-note">GitHub verifies who submitted a score. Measurements are still self-reported, and submissions are limited per account and IP.</p>
+  </main>
+</body>
+</html>

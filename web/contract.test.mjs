@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { validateEvent, parseQuery } from "./contract.mjs";
-import handler from "../api/build-events.mjs";
-import { authorize, clientHash } from "./http.mjs";
+import { createEventsHandler } from "../api/build-events.mjs";
+const handler = createEventsHandler({ authenticate: async () => ({ github_id: "1", github_login: "alex" }), consume: async () => {} });
+import { clientHash } from "./http.mjs";
 const event = () => ({
   event_id: randomUUID(),
   nickname: "alex",
@@ -69,21 +70,9 @@ test("query validation never interpolates an untrusted metric", () => {
   ])
     assert.throws(() => parseQuery("/" + query));
 });
-test("optional bearer token and client hash do not trust forwarded-for", () => {
-  const previous = process.env.CARGO_LEADERBOARD_TOKEN;
-  process.env.CARGO_LEADERBOARD_TOKEN = "secret";
-  try {
-    assert.throws(() => authorize({ headers: {} }), /bearer/);
-    authorize({ headers: { authorization: "Bearer secret" } });
-    const base = { headers: {}, socket: { remoteAddress: "127.0.0.1" } };
-    assert.equal(
-      clientHash(base),
-      clientHash({ ...base, headers: { "x-forwarded-for": "1.2.3.4" } }),
-    );
-  } finally {
-    if (previous === undefined) delete process.env.CARGO_LEADERBOARD_TOKEN;
-    else process.env.CARGO_LEADERBOARD_TOKEN = previous;
-  }
+test("client hash does not trust forwarded-for", () => {
+  const base = { headers: {}, socket: { remoteAddress: "127.0.0.1" } };
+  assert.equal(clientHash(base), clientHash({ ...base, headers: { "x-forwarded-for": "1.2.3.4" } }));
 });
 test("HTTP boundary rejects method, content type, bad JSON and oversized events before database access", async () => {
   for (const [req, status] of [

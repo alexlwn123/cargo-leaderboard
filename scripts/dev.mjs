@@ -1,9 +1,12 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import leaderboard from "../api/leaderboard.mjs";
+import auth from "../api/auth.mjs";
 import events from "../api/build-events.mjs";
 const files = new Map([
   ["/", ["index.html", "text/html"]],
+  ["/account.html", ["account.html", "text/html"]],
+  ["/account.js", ["account.js", "text/javascript"]],
   ["/styles.css", ["styles.css", "text/css"]],
   ["/app.js", ["app.js", "text/javascript"]],
   ["/agents.md", ["agents.md", "text/plain"]],
@@ -18,6 +21,7 @@ const server = createServer(async (req, res) => {
     return leaderboard(req, res);
   if (path === "/v1/build-events" || path === "/api/build-events")
     return events(req, res);
+  if (path.startsWith("/auth/") || path === "/api/auth") return auth(req, res);
   const file = files.get(path);
   if (!file) {
     res.writeHead(404);

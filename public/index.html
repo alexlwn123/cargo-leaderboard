@@ -26,8 +26,8 @@
         ><span>Cargo<br />Leaderboard</span></a
       >
       <nav aria-label="Main navigation">
-        <a href="https://github.com/alexlwn123/cargo-leaderboard"
-          >GitHub <span aria-hidden="true">↗</span></a
+        <a id="account-link" href="/account.html"
+          >Sign in <span aria-hidden="true">↗</span></a
         ><a class="button small" href="#submit"
           >Add your project <span aria-hidden="true">+</span></a
         >
@@ -112,7 +112,7 @@
         </div>
         <div class="board-foot">
           <span>Personal best per project. All time.</span
-          ><span>Self-reported. For bragging rights.</span>
+          ><span>GitHub accounts. Self-reported scores.</span>
         </div>
       </section>
       <section class="join" id="submit" aria-labelledby="join-title">
@@ -120,11 +120,11 @@
           <span class="section-number" aria-hidden="true">+</span>
           <h2 id="join-title">Put your project<br />on the scales.</h2>
           <p>
-            Give your coding agent the prompt. It installs the CLI, saves your
-            nickname, and gets your first build onto the board.
+            Give your coding agent the prompt. It installs the CLI, connects your
+            GitHub account, and gets your first build onto the board.
           </p>
           <p class="privacy-note">
-            Your nickname, project label, measurements, platform and Cargo
+            Your GitHub account, project label, measurements, platform and Cargo
             version are public. Source code and local paths stay on your
             machine.
           </p>
@@ -165,12 +165,12 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
           </div>
           <div class="command-block">
             <div class="command-label">
-              <span>2. Save your public nickname once</span
+              <span>2. Connect your GitHub account</span
               ><button type="button" class="copy" data-copy="config-code">
                 Copy
               </button>
             </div>
-            <pre><code id="config-code">cargo leaderboard setup</code></pre>
+            <pre><code id="config-code">cargo leaderboard login</code></pre>
           </div>
           <div class="command-block">
             <div class="command-label">
@@ -228,7 +228,7 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
             <p>
               Hardware, flags and warm caches vary. Sizes are logical bytes, not
               allocated disk blocks. Shared directories include other projects.
-              Avoid concurrent builds while measuring. Nicknames and scores are
+              Avoid concurrent builds while measuring. GitHub accounts are verified; scores are
               self-reported.
             </p>
           </article>
