@@ -104,6 +104,24 @@ pub fn app(state: AppState) -> Router {
                 )
             }),
         )
+        .route(
+            "/agents.md",
+            get(|| async {
+                (
+                    [("content-type", "text/plain; charset=utf-8")],
+                    include_str!("../public/agents.md"),
+                )
+            }),
+        )
+        .route(
+            "/llms.txt",
+            get(|| async {
+                (
+                    [("content-type", "text/plain; charset=utf-8")],
+                    include_str!("../public/llms.txt"),
+                )
+            }),
+        )
         .route("/v1/build-events", post(create_build_event))
         .route("/v1/leaderboard", get(get_leaderboard))
         .layer(DefaultBodyLimit::max(16_384))

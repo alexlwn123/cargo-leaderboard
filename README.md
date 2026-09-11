@@ -4,7 +4,15 @@ A heavyweight Rust competition: compare enormous build directories, satisfying c
 
 **[View the leaderboard](https://cargo-leaderboard.vercel.app)**
 
-## Submit a project
+## Set up with your coding agent
+
+Open your Rust project in an agent with terminal access and paste:
+
+> Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.
+
+The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, noninteractive configuration, existing settings, and verifying a real submission. This is the default setup flow on the website; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
+
+## Manual setup
 
 Install [Rust](https://rustup.rs) if you don't already have it. Download the CLI without compiling it:
 
