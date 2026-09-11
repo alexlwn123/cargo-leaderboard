@@ -38,6 +38,8 @@ Continue when `cargo leaderboard --version` runs successfully in the environment
 
 ## 3. Connect the user's GitHub account
 
+Start this step after installation succeeds. The CLI initiates browser sign-in; send the user to the approval URL printed by `login`, rather than asking them to sign into the website first.
+
 Run `cargo leaderboard doctor` to check the saved login and server. Continue with an existing login only when it verifies the intended GitHub account and destination.
 
 For a missing, expired, revoked, or old nickname-only setup, run:

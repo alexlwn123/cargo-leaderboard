@@ -303,9 +303,18 @@ if (document.modelContext?.registerTool) {
 }
 
 fetch('/auth/session', { cache: 'no-store' }).then(res => res.ok ? res.json() : null).then(session => {
-  if (session?.user) document.querySelector('#account-link').textContent = '@' + session.user.github_login;
+  if (session?.user) {
+    $('#account-link').textContent = '@' + session.user.github_login;
+    $('#account-link').hidden = false;
+  }
   if (session?.local) {
     $('#account-link').textContent = 'Local board';
     $('#config-code').textContent = 'cargo leaderboard setup --nickname YOUR_NAME --api-url ' + JSON.stringify(location.origin);
   }
 }).catch(() => {});
+
+function openManualSetup() {
+  if (location.hash === '#manual-setup') document.querySelector('#manual-setup').open = true;
+}
+openManualSetup();
+window.addEventListener('hashchange', openManualSetup);

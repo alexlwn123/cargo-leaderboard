@@ -20,6 +20,8 @@ export function createAuthHandler({ getSql = database, fetcher = fetch } = {}) {
       return send(res, 405, { error: `Use ${routes[action]}.` });
     }
     try {
+      // Installation and login start in the CLI. Bare sign-in links return to onboarding.
+      if (action === 'login' && !url.searchParams.has('user_code')) return redirect(res, '/account.html');
       if (action === 'session' && !valid(cookie(req), 'session')) return send(res, 200, { user: null });
       if (action === 'me' || action === 'cli-logout') {
         if (!valid(bearer(req), 'cli')) throw new HttpError(401, 'Run cargo leaderboard login.');

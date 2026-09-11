@@ -10,7 +10,7 @@ Open your Rust project in an agent with terminal access and paste:
 
 > Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.
 
-The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. This is the default setup flow on the website; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
+The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. Installation comes first: the agent installs the CLI, the CLI starts browser approval, then the agent verifies the login and submission. The homepage starts with the agent prompt; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
 
 ## Manual setup
 
@@ -175,4 +175,4 @@ GitHub Actions runs the Rust and JavaScript checks. Rust integration tests exerc
 
 ### Authentication endpoints
 
-`GET /auth/login` starts GitHub sign-in; `/auth/callback` completes it. `GET /auth/session` returns the browser account and CSRF proof (never a CLI token). `POST /auth/device-start` returns the CLI's secret device code and public approval code. `POST /auth/device-poll` exchanges an approved device code once for a CLI credential. `POST /auth/device-approve` requires a browser session and CSRF proof. `GET /auth/me` validates a CLI bearer token. `POST /auth/cli-logout` revokes that token; `/auth/revoke-all` revokes all of the browser account's CLI tokens. `/auth/logout` ends only the browser session. All auth responses are uncached.
+`GET /auth/login?user_code=...` starts GitHub sign-in for a CLI connection (bare sign-in links return to onboarding); `/auth/callback` completes it. `GET /auth/session` returns the browser account and CSRF proof (never a CLI token). `POST /auth/device-start` returns the CLI's secret device code and public approval code. `POST /auth/device-poll` exchanges an approved device code once for a CLI credential. `POST /auth/device-approve` requires a browser session and CSRF proof. `GET /auth/me` validates a CLI bearer token. `POST /auth/cli-logout` revokes that token; `/auth/revoke-all` revokes all of the browser account's CLI tokens. `/auth/logout` ends only the browser session. All auth responses are uncached.
