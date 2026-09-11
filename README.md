@@ -41,7 +41,7 @@ For scripts, use `cargo leaderboard setup --nickname "your-name"`. No account, A
 **Build from source** with a current stable Rust toolchain and Git (also the fallback for unsupported platforms):
 
 ```sh
-cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.0 --locked
+cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.1 --locked
 ```
 
 `clean` runs the real `cargo clean` and deletes its build artifacts. The wrapper never cleans automatically before a build.
@@ -71,7 +71,7 @@ Settings live at `$XDG_CONFIG_HOME/cargo-leaderboard/config.json` (otherwise `~/
 Environment variables `CARGO_LEADERBOARD_NICKNAME` and `CARGO_LEADERBOARD_API_URL` take precedence over saved settings. The server defaults to `https://cargo-leaderboard.vercel.app`. Existing environment-based setups continue to work. Private boards can use `CARGO_LEADERBOARD_TOKEN` in the environment.
 
 - **Update:** run the installer again. It preserves your settings and keeps the existing binary if a download or checksum fails. Stop running CLI/server processes first on Windows.
-- **Pin a version:** pass `--version v0.2.0` to the shell installer or `-Version v0.2.0` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
+- **Pin a version:** pass `--version v0.2.1` to the shell installer or `-Version v0.2.1` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
 - **Command not found:** check that the installer directory is in PATH and reopen the terminal. `cargo --version` should work too; `rustup show` diagnoses a missing toolchain.
 - **Connection/configuration trouble:** `cargo leaderboard doctor` checks the effective nickname, server URL, Cargo, and the server's read endpoint without publishing anything. Submission credentials and rate limits are only checked on submission. Unset old environment overrides if setup changes don't take effect.
 - **Remove:** delete `cargo-leaderboard` (Windows: `cargo-leaderboard.exe`) from the install directory. Optionally delete the config file above. For source installations, use `cargo uninstall cargo-leaderboard`.
