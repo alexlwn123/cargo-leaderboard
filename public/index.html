@@ -26,8 +26,8 @@
         ><span>Cargo<br />Leaderboard</span></a
       >
       <nav aria-label="Main navigation">
-        <a id="account-link" href="/account.html"
-          >Sign in <span aria-hidden="true">↗</span></a
+        <a id="account-link" href="/account.html" hidden
+          >Your account</a
         ><a class="button small" href="#submit"
           >Add your project <span aria-hidden="true">+</span></a
         >
@@ -145,7 +145,7 @@
             <pre class="agent-prompt"><code id="agent-code">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
             <a class="agent-guide" id="agent-guide" href="/agents.md">Read the agent instructions <span aria-hidden="true">↗</span></a>
           </div>
-          <details class="manual-setup">
+          <details class="manual-setup" id="manual-setup">
             <summary>Prefer a terminal? Manual setup</summary>
           <div class="install-platforms" role="group" aria-label="Installation platform">
             <button type="button" data-install="unix" aria-pressed="true">macOS / Linux</button>

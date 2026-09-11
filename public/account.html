@@ -14,9 +14,18 @@
   </header>
   <main class="wrap account-page">
     <p class="intro-label">Your builds. Your GitHub account.</p>
-    <h1>Claim your<br />corner of the board.</h1>
-    <p class="account-intro">Sign in with GitHub, then connect your CLI. Every submission carries your verified GitHub username.</p>
-    <section class="account-card" aria-label="GitHub account">
+    <h1 id="account-title">Put your project<br />on the board.</h1>
+    <p class="account-intro" id="account-intro">Start with your coding agent. It installs the CLI, then opens GitHub sign-in when your project is ready to connect.</p>
+    <section class="account-card" id="get-started" aria-labelledby="get-started-title">
+      <h2 id="get-started-title">Add your project</h2>
+      <p>Open your Rust project in your coding agent and paste this prompt.</p>
+      <pre class="onboarding-prompt"><code id="agent-prompt">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
+      <button type="button" class="button" id="copy-prompt">Copy agent prompt</button>
+      <p id="copy-status" role="status"></p>
+      <p><a href="/#manual-setup">Prefer a terminal? Installation instructions</a></p>
+      <p class="account-note">Install → connect GitHub from the CLI → build. Your agent guides you through each step.</p>
+    </section>
+    <section class="account-card" id="account-card" hidden aria-label="GitHub account">
       <p id="account-status" role="status">Checking your login…</p>
       <div id="signed-out" hidden>
         <a class="button" id="sign-in" href="/auth/login">Sign in with GitHub <span aria-hidden="true">↗</span></a>
@@ -25,10 +34,10 @@
       <div id="signed-in" hidden>
         <p class="account-note">Your account, project label, measurements, platform and tool versions are public when you submit. Source code stays on your machine.</p>
         <form id="approve-form">
-          <h2>Connect your CLI</h2>
-          <p>Run <code>cargo leaderboard login</code> in your terminal, then approve its code here.</p>
+          <h2>Approve this connection</h2>
+          <p>Your CLI is waiting. Check that this code matches the one in your terminal.</p>
           <label for="device-code">Code shown in your terminal</label>
-          <input id="device-code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" placeholder="ABCDE-12345" required pattern="[A-Fa-f0-9]{5}-?[A-Fa-f0-9]{5}" />
+          <input id="device-code" name="code" readonly autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" placeholder="ABCDE-12345" required pattern="[A-Fa-f0-9]{5}-?[A-Fa-f0-9]{5}" />
           <p class="account-note">Only approve a code from a login you started yourself. Approval allows that CLI to submit measurements as you for 90 days.</p>
           <button type="submit" class="button" id="approve">Approve this CLI</button>
         </form>
@@ -40,6 +49,7 @@
         </div>
       </div>
     </section>
+    <p><a href="/#submit" id="start-over">Back to project setup</a></p>
     <p class="account-note">GitHub verifies who submitted a score. Measurements are still self-reported, and submissions are limited per account and IP.</p>
   </main>
 </body>

@@ -857,10 +857,15 @@ code {
 .text-button { background: none; border: 0; padding: 8px 0; display: block; color: var(--blue); text-decoration: underline; text-underline-offset: 4px; }
 #account-status { font-weight: 700; margin-top: 0; }
 #action-status { color: var(--blue); font-weight: 600; }
-.site-header nav > #account-link { display: inline-flex; }
+.site-header nav > #account-link:not([hidden]) { display: inline-flex; }
+.site-header nav > #account-link[hidden] { display: none; }
 @media (max-width: 600px) {
   .account-page { padding-block: 32px; }
   .account-card { padding: 22px; }
   .site-header nav { gap: 12px; }
-  .site-header nav > a.button.small { display: none; }
+  .site-header nav > a.button.small { display: inline-flex; padding: 10px 12px; gap: 8px; font-size: 12px; }
+  .site-header nav { flex-wrap: wrap; justify-content: flex-end; }
 }
+
+.onboarding-prompt { white-space: pre-wrap; overflow-wrap: anywhere; padding: 18px; background: var(--pale); border-radius: 8px; font-size: 14px; line-height: 1.7; }
+#get-started h2 { margin-top: 0; }

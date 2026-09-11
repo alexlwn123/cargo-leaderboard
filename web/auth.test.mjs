@@ -49,3 +49,11 @@ test('GitHub account lookup validates response and discards provider token', asy
   assert.deepEqual(user, { github_id: '123', github_login: 'verified-user' });
   assert.equal(calls, 2);
 });
+
+test('a bare sign-in link returns to onboarding without contacting GitHub or the database', async () => {
+  const handler = createAuthHandler({ getSql() { throw new Error('Unexpected database access'); }, fetcher() { throw new Error('Unexpected GitHub access'); } });
+  const res = response();
+  await handler({ method: 'GET', url: '/auth/login', headers: {} }, res);
+  assert.equal(res.statusCode, 302);
+  assert.equal(res.headers.Location, '/account.html');
+});

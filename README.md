@@ -10,7 +10,7 @@ Open your Rust project in an agent with terminal access and paste:
 
 > Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.
 
-The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. This is the default setup flow on the website; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
+The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. Installation comes first: the agent installs the CLI, the CLI starts browser approval, then the agent verifies the login and submission. The homepage starts with the agent prompt; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
 
 ## Manual setup
 
