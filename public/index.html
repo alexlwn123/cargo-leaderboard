@@ -120,8 +120,8 @@
           <span class="section-number" aria-hidden="true">+</span>
           <h2 id="join-title">Put your project<br />on the scales.</h2>
           <p>
-            Install the CLI, choose a public nickname, then build or clean as
-            usual. Successful runs go straight to the board.
+            Give your coding agent the prompt. It installs the CLI, saves your
+            nickname, and gets your first build onto the board.
           </p>
           <p class="privacy-note">
             Your nickname, project label, measurements, platform and Cargo
@@ -134,8 +134,19 @@
         </div>
         <div class="terminal">
           <div class="terminal-heading">
-            <span>Terminal</span><span>One install. One nickname.</span>
+            <span>Agent setup</span><span>One prompt. Your next build.</span>
           </div>
+          <div class="command-block agent-setup">
+            <div class="command-label">
+              <span>Paste into your coding agent</span>
+              <button type="button" class="copy" data-copy="agent-code">Copy prompt</button>
+            </div>
+            <p class="agent-context">Open your Rust project in Codex, Claude Code, or another coding agent with terminal access.</p>
+            <pre class="agent-prompt"><code id="agent-code">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
+            <a class="agent-guide" id="agent-guide" href="/agents.md">Read the agent instructions <span aria-hidden="true">↗</span></a>
+          </div>
+          <details class="manual-setup">
+            <summary>Prefer a terminal? Manual setup</summary>
           <div class="install-platforms" role="group" aria-label="Installation platform">
             <button type="button" data-install="unix" aria-pressed="true">macOS / Linux</button>
             <button type="button" data-install="windows" aria-pressed="false">Windows</button>
@@ -180,6 +191,7 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
               Setup trouble? Run <code>cargo leaderboard doctor</code>.
             </p>
           </div>
+          </details>
           <p
             class="copy-status"
             id="copy-status"

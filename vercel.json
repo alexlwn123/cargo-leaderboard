@@ -24,6 +24,12 @@
           "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
         }
       ]
+    },
+    {
+      "source": "/agents.md",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+      ]
     }
   ]
 }

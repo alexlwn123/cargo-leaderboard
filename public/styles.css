@@ -826,3 +826,19 @@ code {
 .install-platforms button:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 .install-note { padding: 0 24px; color: #c3cbe0; font-size: 12px; line-height: 1.7; }
 .install-note a { color: #f4d35e; }
+
+.agent-context { color: #c3cbe0; font-size: 14px; line-height: 1.7; margin: 16px 0; }
+.agent-prompt { margin: 0 0 20px; }
+.agent-prompt code { font-size: 14px; line-height: 1.8; font-weight: 400; }
+.agent-guide { color: #f4d35e; font-size: 14px; text-underline-offset: 4px; }
+.manual-setup summary {
+  color: #c3cbe0;
+  font-size: 14px;
+  padding: 20px 24px;
+  cursor: pointer;
+}
+.manual-setup summary:hover { color: #fff; }
+.manual-setup summary:focus-visible { outline: 2px solid #f4d35e; outline-offset: -4px; }
+.manual-setup[open] summary { border-bottom: 1px solid #36415a; }
+.agent-setup .command-label { gap: 12px; }
+.agent-setup .copy { white-space: nowrap; }

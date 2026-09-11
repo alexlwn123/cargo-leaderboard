@@ -6,6 +6,8 @@ const files = new Map([
   ["/", ["index.html", "text/html"]],
   ["/styles.css", ["styles.css", "text/css"]],
   ["/app.js", ["app.js", "text/javascript"]],
+  ["/agents.md", ["agents.md", "text/plain"]],
+  ["/llms.txt", ["llms.txt", "text/plain"]],
   ["/install.sh", ["install.sh", "text/plain"]],
   ["/install.ps1", ["install.ps1", "text/plain"]],
   ["/favicon.svg", ["favicon.svg", "image/svg+xml"]],

@@ -8,6 +8,8 @@ for (const path of [
   "public/favicon.svg",
   "public/install.sh",
   "public/install.ps1",
+  "public/agents.md",
+  "public/llms.txt",
 ])
   await access(path);
 for (const file of [

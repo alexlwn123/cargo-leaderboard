@@ -224,10 +224,12 @@ document.querySelectorAll("[data-copy]").forEach((button) =>
     const target = document.getElementById(button.dataset.copy);
     try {
       await navigator.clipboard.writeText(target.textContent);
-      $("#copy-status").textContent = "Copied. Paste it into your terminal.";
+      $("#copy-status").textContent = button.dataset.copy === "agent-code"
+        ? "Copied. Paste it into your coding agent."
+        : "Copied. Paste it into your terminal.";
     } catch {
       $("#copy-status").textContent =
-        "Copy unavailable. Select the command and copy it manually.";
+        "Copy unavailable. Select the text and copy it manually.";
     }
   }),
 );
@@ -248,7 +250,12 @@ document.querySelectorAll("[data-install]").forEach((button) =>
     $("#copy-status").textContent = "";
   }),
 );
-// Saved setup uses this board for self-hosted installations too.
+// Both setup paths use the current board, including self-hosted installations.
+$("#agent-code").textContent =
+  "Set up Cargo Leaderboard in this Rust project using " + location.origin +
+  "/agents.md, then run a build and verify the submission." +
+  (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
+    " Use " + location.origin + " as the leaderboard server.");
 $("#config-code").textContent = "cargo leaderboard setup" +
   (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
     " --api-url " + JSON.stringify(location.origin));
