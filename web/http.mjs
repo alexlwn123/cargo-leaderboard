@@ -25,7 +25,16 @@ export async function readEvent(req) {
     throw new HttpError(415, "Use application/json.");
   if (Number(req.headers["content-length"]) > 16_384)
     throw new HttpError(413, "Event is too large.");
-  let raw = req.body;
+  let raw;
+  try {
+    // Vercel parses JSON lazily when this property is read.
+    raw = req.body;
+  } catch (error) {
+    if (error?.statusCode === 400 || error instanceof SyntaxError) {
+      throw new HttpError(400, "Invalid JSON.");
+    }
+    throw error;
+  }
   if (raw === undefined) {
     const chunks = [];
     let bytes = 0;

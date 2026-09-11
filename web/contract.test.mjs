@@ -125,3 +125,22 @@ test("HTTP boundary rejects method, content type, bad JSON and oversized events 
     assert.equal(typeof JSON.parse(response.body).error, "string");
   }
 });
+
+test("Vercel lazy body-parser errors remain HTTP 400", async () => {
+  const req = {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    get body() {
+      throw Object.assign(new Error("Invalid JSON"), { statusCode: 400 });
+    },
+  };
+  const res = {
+    setHeader() {},
+    end(value) {
+      this.body = value;
+    },
+  };
+  await handler(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.match(JSON.parse(res.body).error, /JSON/);
+});
