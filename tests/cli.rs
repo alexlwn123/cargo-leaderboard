@@ -224,3 +224,147 @@ async fn manifest_path_resolves_project_label_and_dry_run_does_not_report() -> R
     );
     Ok(())
 }
+
+fn isolated_cli(dir: &std::path::Path) -> Result<Command> {
+    let mut command = Command::cargo_bin("cargo-leaderboard")?;
+    command
+        .env("CARGO_LEADERBOARD_CONFIG_DIR", dir)
+        .env_remove("CARGO_LEADERBOARD_NICKNAME")
+        .env_remove("CARGO_LEADERBOARD_API_URL")
+        .env_remove("CARGO_LEADERBOARD_TOKEN");
+    Ok(command)
+}
+
+#[test]
+fn setup_saves_defaults_updates_atomically_and_rejects_invalid_values() -> Result<()> {
+    let dir = TempDir::new()?;
+    let path = dir.path().join("config.json");
+    isolated_cli(dir.path())?
+        .args(["setup", "--nickname", "first"])
+        .assert()
+        .success();
+    let saved: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
+    assert_eq!(saved["nickname"], "first");
+    assert_eq!(saved["api_url"], "https://cargo-leaderboard.vercel.app");
+    isolated_cli(dir.path())?
+        .args([
+            "setup",
+            "--nickname",
+            "second",
+            "--api-url",
+            "http://localhost:3000/",
+        ])
+        .assert()
+        .success();
+    let previous = fs::read(&path)?;
+    for args in [
+        vec!["setup", "--nickname", ""],
+        vec!["setup", "--nickname", "valid", "--api-url", "file:///tmp"],
+        vec![
+            "setup",
+            "--nickname",
+            "valid",
+            "--api-url",
+            "https://user:secret@example.com",
+        ],
+    ] {
+        isolated_cli(dir.path())?.args(args).assert().failure();
+        assert_eq!(fs::read(&path)?, previous);
+    }
+    // An explicit setup repairs a corrupt file without needing manual edits.
+    fs::write(&path, "broken")?;
+    isolated_cli(dir.path())?
+        .args(["setup", "--nickname", "repaired"])
+        .assert()
+        .success();
+    let saved: serde_json::Value = serde_json::from_slice(&fs::read(path)?)?;
+    assert_eq!(saved["nickname"], "repaired");
+    assert!(saved.get("token").is_none());
+    Ok(())
+}
+
+#[test]
+fn first_run_and_noninteractive_setup_explain_next_steps() -> Result<()> {
+    let dir = TempDir::new()?;
+    let output = isolated_cli(dir.path())?.arg("build").output()?;
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("cargo leaderboard setup"));
+    let output = isolated_cli(dir.path())?
+        .arg("setup")
+        .write_stdin("")
+        .output()?;
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--nickname"));
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn saved_setup_is_used_across_processes_and_environment_overrides_it() -> Result<()> {
+    let events = Arc::new(Mutex::new(Vec::<BuildEvent>::new()));
+    let addr = spawn_capture_server(events.clone()).await?;
+    let dir = TempDir::new()?;
+    isolated_cli(dir.path())?
+        .args([
+            "setup",
+            "--nickname",
+            "saved-name",
+            "--api-url",
+            &format!("http://{addr}"),
+        ])
+        .assert()
+        .success();
+    for override_name in [None, Some("env-name")] {
+        let mut command = isolated_cli(dir.path())?;
+        if let Some(name) = override_name {
+            command.env("CARGO_LEADERBOARD_NICKNAME", name);
+        }
+        command
+            .args(["build", "--manifest-path"])
+            .arg(fixture_manifest("success-project"))
+            .arg("--target-dir")
+            .arg(dir.path().join("target"))
+            .assert()
+            .success();
+    }
+    let captured = events.lock().unwrap();
+    assert_eq!(captured.len(), 2);
+    assert_eq!(captured[0].nickname, "saved-name");
+    assert_eq!(captured[1].nickname, "env-name");
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn doctor_checks_response_shape_and_never_submits() -> Result<()> {
+    let app = Router::new().route(
+        "/v1/leaderboard",
+        axum::routing::get(|| async { Json(serde_json::json!({"entries": []})) }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let addr = listener.local_addr()?;
+    tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+    let dir = TempDir::new()?;
+    isolated_cli(dir.path())?
+        .args([
+            "setup",
+            "--nickname",
+            "tester",
+            "--api-url",
+            &format!("http://{addr}"),
+        ])
+        .assert()
+        .success();
+    let output = isolated_cli(dir.path())?.arg("doctor").output()?;
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Server connection OK"));
+    isolated_cli(dir.path())?
+        .env(
+            "CARGO_LEADERBOARD_API_URL",
+            format!("http://{addr}/invalid"),
+        )
+        .arg("doctor")
+        .assert()
+        .failure();
+    Ok(())
+}

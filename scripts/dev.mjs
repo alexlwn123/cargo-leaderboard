@@ -6,6 +6,8 @@ const files = new Map([
   ["/", ["index.html", "text/html"]],
   ["/styles.css", ["styles.css", "text/css"]],
   ["/app.js", ["app.js", "text/javascript"]],
+  ["/install.sh", ["install.sh", "text/plain"]],
+  ["/install.ps1", ["install.ps1", "text/plain"]],
   ["/favicon.svg", ["favicon.svg", "image/svg+xml"]],
 ]);
 const server = createServer(async (req, res) => {

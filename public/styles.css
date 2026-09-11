@@ -801,3 +801,28 @@ code {
     letter-spacing: -1.8px;
   }
 }
+
+.install-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 20px 24px 0;
+}
+.install-platforms button {
+  font: inherit;
+  font-size: 12px;
+  color: #c3cbe0;
+  background: transparent;
+  border: 1px solid #58627d;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.install-platforms button[aria-pressed="true"] {
+  color: #101c38;
+  background: #f4d35e;
+  border-color: #f4d35e;
+}
+.install-platforms button:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+.install-note { padding: 0 24px; color: #c3cbe0; font-size: 12px; line-height: 1.7; }
+.install-note a { color: #f4d35e; }

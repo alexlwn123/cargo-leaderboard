@@ -231,11 +231,27 @@ document.querySelectorAll("[data-copy]").forEach((button) =>
     }
   }),
 );
-// Use the current server for both hosted and self-hosted installations.
-$("#config-code").textContent =
-  'export CARGO_LEADERBOARD_NICKNAME="your-name"\nexport CARGO_LEADERBOARD_API_URL="' +
-  location.origin +
-  '"';
+const installCommands = {
+  unix: "curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&\nsh /tmp/cargo-leaderboard-install.sh",
+  windows: '& {\n  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\\cargo-leaderboard-install.ps1" -ErrorAction Stop\n  powershell -ExecutionPolicy Bypass -File "$env:TEMP\\cargo-leaderboard-install.ps1"\n}',
+  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.2.2 --locked",
+};
+document.querySelectorAll("[data-install]").forEach((button) =>
+  button.addEventListener("click", () => {
+    document.querySelectorAll("[data-install]").forEach((item) =>
+      item.setAttribute("aria-pressed", String(item === button)),
+    );
+    $("#install-code").textContent = installCommands[button.dataset.install];
+    $("#install-method").textContent = button.dataset.install === "source"
+      ? "Compile locally. Requires Git and a current stable "
+      : "Prebuilt binary, checksum verified. Requires ";
+    $("#copy-status").textContent = "";
+  }),
+);
+// Saved setup uses this board for self-hosted installations too.
+$("#config-code").textContent = "cargo leaderboard setup" +
+  (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
+    " --api-url " + JSON.stringify(location.origin));
 load();
 
 // Progressive enhancement: agents can select the same boards as a person can.

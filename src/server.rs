@@ -86,6 +86,24 @@ pub fn app(state: AppState) -> Router {
                 )
             }),
         )
+        .route(
+            "/install.sh",
+            get(|| async {
+                (
+                    [("content-type", "text/plain")],
+                    include_str!("../public/install.sh"),
+                )
+            }),
+        )
+        .route(
+            "/install.ps1",
+            get(|| async {
+                (
+                    [("content-type", "text/plain")],
+                    include_str!("../public/install.ps1"),
+                )
+            }),
+        )
         .route("/v1/build-events", post(create_build_event))
         .route("/v1/leaderboard", get(get_leaderboard))
         .layer(DefaultBodyLimit::max(16_384))

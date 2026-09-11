@@ -20,12 +20,26 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Save your public nickname and server for future terminals.
+    Setup(SetupArgs),
+    /// Check configuration, Cargo, and the server without submitting anything.
+    Doctor,
     /// Build and submit the total artifact footprint.
     Build(BuildArgs),
     /// Clean and submit the bytes reclaimed. Runs the real cargo clean.
     Clean(BuildArgs),
     /// Run a local SQLite-backed leaderboard server.
     Serve(ServeArgs),
+}
+
+#[derive(Debug, Args)]
+struct SetupArgs {
+    /// Public nickname (1–40 characters). Prompts when omitted.
+    #[arg(long)]
+    nickname: Option<String>,
+    /// Use a private/self-hosted server instead of the public leaderboard.
+    #[arg(long)]
+    api_url: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -58,6 +72,14 @@ pub async fn run() -> Result<u8> {
     let cli = Cli::parse_from(args);
 
     match cli.command {
+        Commands::Setup(args) => {
+            crate::config::setup(args.nickname, args.api_url)?;
+            Ok(0)
+        }
+        Commands::Doctor => {
+            crate::config::doctor().await?;
+            Ok(0)
+        }
         Commands::Build(args) => {
             run_command("build", args.cargo_args, args.no_submit, args.repo).await
         }
