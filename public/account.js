@@ -87,6 +87,7 @@ $('#revoke').addEventListener('click', async () => {
   $('#revoke').disabled = true;
   try {
     await action('revoke-all');
+    approved = false;
     $('#action-status').textContent = 'All CLI access revoked. Run cargo leaderboard login to connect again.';
     await load();
   } catch (error) { $('#action-status').textContent = error.message; $('#revoke').disabled = false; }
