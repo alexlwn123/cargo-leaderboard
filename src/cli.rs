@@ -1,0 +1,72 @@
+use std::net::SocketAddr;
+
+use anyhow::Result;
+use clap::{Args, Parser, Subcommand};
+
+use crate::build::run_command;
+use crate::server::run_server;
+
+#[derive(Debug, Parser)]
+#[command(
+    name = "cargo-leaderboard",
+    bin_name = "cargo leaderboard",
+    version,
+    about = "Compare the unreasonable size of Rust builds and cleans"
+)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+    /// Build and submit the total artifact footprint.
+    Build(BuildArgs),
+    /// Clean and submit the bytes reclaimed. Runs the real cargo clean.
+    Clean(BuildArgs),
+    /// Run a local SQLite-backed leaderboard server.
+    Serve(ServeArgs),
+}
+
+#[derive(Debug, Args)]
+struct BuildArgs {
+    /// Measure locally without sending an event.
+    #[arg(long)]
+    no_submit: bool,
+    /// Public project label; use this to avoid publishing a private repository name.
+    #[arg(long)]
+    repo: Option<String>,
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    cargo_args: Vec<String>,
+}
+
+#[derive(Debug, Args)]
+struct ServeArgs {
+    #[arg(long, default_value = "127.0.0.1:3000")]
+    bind: SocketAddr,
+    #[arg(long, default_value = "sqlite://leaderboard.db")]
+    database_url: String,
+    #[arg(long)]
+    auth_token: Option<String>,
+}
+
+pub async fn run() -> Result<u8> {
+    let mut args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).is_some_and(|arg| arg == "leaderboard") {
+        args.remove(1);
+    }
+    let cli = Cli::parse_from(args);
+
+    match cli.command {
+        Commands::Build(args) => {
+            run_command("build", args.cargo_args, args.no_submit, args.repo).await
+        }
+        Commands::Clean(args) => {
+            run_command("clean", args.cargo_args, args.no_submit, args.repo).await
+        }
+        Commands::Serve(args) => {
+            run_server(args.bind, &args.database_url, args.auth_token).await?;
+            Ok(0)
+        }
+    }
+}

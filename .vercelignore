@@ -1,0 +1,12 @@
+target
+.git
+.agents
+skills-lock.json
+.env*
+tests
+src
+Cargo.lock
+Cargo.toml
+node_modules
+test-results
+playwright-report

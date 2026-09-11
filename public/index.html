@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#234de2" />
+    <title>Cargo Leaderboard — A heavyweight Rust competition</title>
+    <meta
+      name="description"
+      content="Compare the absurd size of Rust build artifacts, celebrate a massive cargo clean, and give your target directory its moment of glory."
+    />
+    <meta property="og:title" content="Cargo Leaderboard" />
+    <meta
+      property="og:description"
+      content="A heavyweight Rust competition. Biggest builds, biggest cleans, longest waits."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#leaderboard">Skip to leaderboard</a>
+    <header class="site-header wrap">
+      <a class="brand" href="/" aria-label="Cargo Leaderboard home"
+        ><span class="brand-icon" aria-hidden="true">c/</span
+        ><span>Cargo<br />Leaderboard</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="https://github.com/alexlwn123/cargo-leaderboard"
+          >GitHub <span aria-hidden="true">↗</span></a
+        ><a class="button small" href="#submit"
+          >Add your project <span aria-hidden="true">+</span></a
+        >
+      </nav>
+    </header>
+    <main class="wrap">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="intro-label">A heavyweight Rust competition</p>
+          <h1 id="page-title">That’s a lot<br />of <code>target/</code>.</h1>
+        </div>
+        <div class="intro-note">
+          <span class="badge">Bigger is better. Here, anyway.</span>
+          <p>
+            Your disk suffered.<br />
+            Your project deserves a place on the board.
+          </p>
+          <a href="#method">What are we measuring?</a>
+        </div>
+      </section>
+      <section class="board" id="leaderboard" aria-label="Leaderboard">
+        <div class="board-top">
+          <div class="metric-tabs" role="group" aria-label="Ranking metric">
+            <button
+              type="button"
+              data-metric="largest_build"
+              aria-pressed="true"
+            >
+              Biggest builds
+            </button>
+            <button
+              type="button"
+              data-metric="largest_clean"
+              aria-pressed="false"
+            >
+              Biggest cleans
+            </button>
+            <button
+              type="button"
+              data-metric="longest_single_build"
+              aria-pressed="false"
+            >
+              Longest waits
+            </button>
+          </div>
+          <button
+            class="refresh"
+            id="refresh"
+            type="button"
+            aria-label="Refresh leaderboard"
+          >
+            ↻
+          </button>
+        </div>
+        <div class="board-caption">
+          <p id="metric-description">
+            Total artifact footprint after a successful build.
+          </p>
+          <span id="entry-count" aria-live="polite">Loading…</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <caption class="sr-only" id="table-caption">
+              Biggest Rust builds, ranked by total artifact bytes
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" class="rank-heading">Rank</th>
+                <th scope="col">Project / builder</th>
+                <th scope="col" id="value-heading">Build footprint</th>
+                <th scope="col" id="secondary-heading">Build time</th>
+                <th scope="col" class="date-heading">Recorded</th>
+              </tr>
+            </thead>
+            <tbody id="entries"></tbody>
+          </table>
+        </div>
+        <div id="board-state" role="status" class="board-state">
+          <span class="state-symbol" aria-hidden="true">…</span>
+          <h2>Weighing the competition.</h2>
+          <p>Fetching the latest community entries.</p>
+        </div>
+        <div class="board-foot">
+          <span>Personal best per project. All time.</span
+          ><span>Self-reported. For bragging rights.</span>
+        </div>
+      </section>
+      <section class="join" id="submit" aria-labelledby="join-title">
+        <div class="join-copy">
+          <span class="section-number" aria-hidden="true">+</span>
+          <h2 id="join-title">Put your project<br />on the scales.</h2>
+          <p>
+            Install the CLI, choose a public nickname, then build or clean as
+            usual. Successful runs go straight to the board.
+          </p>
+          <p class="privacy-note">
+            Your nickname, project label, measurements, platform and Cargo
+            version are public. Source code and local paths stay on your
+            machine.
+          </p>
+          <a href="https://github.com/alexlwn123/cargo-leaderboard#readme"
+            >Read the CLI guide <span aria-hidden="true">↗</span></a
+          >
+        </div>
+        <div class="terminal">
+          <div class="terminal-heading">
+            <span>Terminal</span><span>Rust installed? You’re ready.</span>
+          </div>
+          <div class="command-block">
+            <div class="command-label">
+              <span>1. Install</span
+              ><button type="button" class="copy" data-copy="install-code">
+                Copy
+              </button>
+            </div>
+            <pre><code id="install-code">cargo install --git https://github.com/alexlwn123/cargo-leaderboard --locked</code></pre>
+          </div>
+          <div class="command-block">
+            <div class="command-label">
+              <span>2. Set your public nickname</span
+              ><button type="button" class="copy" data-copy="config-code">
+                Copy
+              </button>
+            </div>
+            <pre><code id="config-code">export CARGO_LEADERBOARD_NICKNAME="your-name"
+export CARGO_LEADERBOARD_API_URL="https://cargo-leaderboard.vercel.app"</code></pre>
+          </div>
+          <div class="command-block">
+            <div class="command-label">
+              <span>3. Run inside your Rust project</span
+              ><button type="button" class="copy" data-copy="build-code">
+                Copy build
+              </button>
+            </div>
+            <pre><code id="build-code">cargo leaderboard build</code></pre>
+            <div class="clean-command">
+              <code>cargo leaderboard clean</code
+              ><button type="button" class="copy" data-copy="clean-code">
+                Copy clean</button
+              ><code id="clean-code" hidden>cargo leaderboard clean</code>
+            </div>
+            <p class="terminal-note">
+              Clean deletes your build artifacts, just like cargo clean.
+            </p>
+          </div>
+          <p
+            class="copy-status"
+            id="copy-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+      </section>
+      <section class="method" id="method" aria-labelledby="method-title">
+        <h2 id="method-title">The fine print, in human units.</h2>
+        <div class="method-grid">
+          <article>
+            <span class="method-mark" aria-hidden="true">↗</span>
+            <h3>Builds take up space.</h3>
+            <p>
+              We count file sizes across Cargo’s target and build directories
+              after a successful build. Cached artifacts, dependencies and other
+              profiles count too. This is total footprint, not just the latest
+              build’s output.
+            </p>
+          </article>
+          <article>
+            <span class="method-mark" aria-hidden="true">↘</span>
+            <h3>Cleans give it back.</h3>
+            <p>
+              The before-and-after difference is your clean score. Partial
+              cleans count only the decrease. Empty cleans don’t rank. Values
+              use binary units: 1 GiB is 1,073,741,824 bytes.
+            </p>
+          </article>
+          <article>
+            <span class="method-mark" aria-hidden="true">≈</span>
+            <h3>A competition. Not a benchmark.</h3>
+            <p>
+              Hardware, flags and warm caches vary. Sizes are logical bytes, not
+              allocated disk blocks. Shared directories include other projects.
+              Avoid concurrent builds while measuring. Nicknames and scores are
+              self-reported.
+            </p>
+          </article>
+        </div>
+        <p class="local-tip">
+          Keeping a project private? Use <code>--repo my-project</code> to
+          replace its label, or <code>--no-submit</code> to measure locally. Put
+          wrapper options before Cargo flags.
+        </p>
+      </section>
+    </main>
+    <footer class="wrap footer">
+      <span>Cargo Leaderboard</span
+      ><span>Some dependencies are heavier than others.</span
+      ><a href="https://github.com/alexlwn123/cargo-leaderboard"
+        >Open source on GitHub</a
+      >
+    </footer>
+  </body>
+</html>
