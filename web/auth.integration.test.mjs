@@ -59,12 +59,18 @@ test('GitHub login → device approval → verified submission → revocation, w
     assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: { cookie: sessionCookie } })).statusCode, 403);
     assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: browserHeaders })).statusCode, 200);
     assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: browserHeaders })).statusCode, 400);
+    const pendingSession = await invoke(auth, '/auth/session', { headers: { cookie: sessionCookie } });
+    assert.equal(pendingSession.body.pending_devices, 1);
+    assert.equal(pendingSession.body.devices, 0);
     await sql`UPDATE device_logins SET next_poll_at = NOW() - INTERVAL '1 second'`;
     const pollResults = await Promise.all([poll(), poll()]);
     const issued = pollResults.find(r => r.statusCode === 200);
     assert.ok(issued);
     assert.equal(pollResults.filter(r => r.statusCode === 200).length, 1);
     assert.equal((await poll()).statusCode, 400);
+    const connectedSession = await invoke(auth, '/auth/session', { headers: { cookie: sessionCookie } });
+    assert.equal(connectedSession.body.pending_devices, 0);
+    assert.equal(connectedSession.body.devices, 1);
     const token = issued.body.token;
     const cliHeaders = { authorization: `Bearer ${token}` };
     assert.equal((await invoke(auth, '/auth/me', { headers: cliHeaders })).body.user.github_id, '101');

@@ -104,8 +104,10 @@ export function createAuthHandler({ getSql = database, fetcher = fetch } = {}) {
       const sql = getSql();
       const user = await identity(session, 'session', sql);
       if (action === 'session') {
-        const [counts] = await sql`SELECT count(*)::int AS devices FROM auth_tokens WHERE github_id = ${user.github_id} AND kind = 'cli' AND expires_at > NOW()`;
-        return send(res, 200, { user, csrf: csrf(session), devices: counts.devices });
+        const [counts] = await sql`SELECT
+          (SELECT count(*)::int FROM auth_tokens WHERE github_id = ${user.github_id} AND kind = 'cli' AND expires_at > NOW()) AS devices,
+          (SELECT count(*)::int FROM device_logins WHERE github_id = ${user.github_id} AND expires_at > NOW()) AS pending_devices`;
+        return send(res, 200, { user, csrf: csrf(session), devices: counts.devices, pending_devices: counts.pending_devices });
       }
       requireCsrf(req, session);
       await limit(`account-actions:${user.github_id}`, 60, sql);
