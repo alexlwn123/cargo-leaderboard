@@ -242,6 +242,9 @@ document.querySelectorAll("[data-install]").forEach((button) =>
       item.setAttribute("aria-pressed", String(item === button)),
     );
     $("#install-code").textContent = installCommands[button.dataset.install];
+    $("#install-method").textContent = button.dataset.install === "source"
+      ? "Compile locally. Requires Git and a current stable "
+      : "Prebuilt binary, checksum verified. Requires ";
     $("#copy-status").textContent = "";
   }),
 );
