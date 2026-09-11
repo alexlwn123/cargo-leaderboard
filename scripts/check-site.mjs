@@ -6,6 +6,8 @@ for (const path of [
   "public/styles.css",
   "public/app.js",
   "public/favicon.svg",
+  "public/install.sh",
+  "public/install.ps1",
 ])
   await access(path);
 for (const file of [

@@ -1,0 +1,80 @@
+name: Release CLI
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+          - os: macos-15
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])')
+          test "$GITHUB_REF_NAME" = "v$version"
+      - run: cargo test --locked --target ${{ matrix.target }}
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Package Unix binary and test installer
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          tar -czf dist/cargo-leaderboard-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release cargo-leaderboard
+          python3 scripts/test-install.py target/${{ matrix.target }}/release/cargo-leaderboard
+      - name: Package Windows binary and test installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory dist | Out-Null
+          Compress-Archive -Path target/${{ matrix.target }}/release/cargo-leaderboard.exe -DestinationPath dist/cargo-leaderboard-${{ matrix.target }}.zip
+          ./scripts/test-install.ps1 -Archive dist/cargo-leaderboard-${{ matrix.target }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cargo-leaderboard-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Generate checksums and publish
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          sha256sum *.tar.gz *.zip > SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --title "Cargo Leaderboard $RELEASE_TAG" --notes 'Install a prebuilt binary for macOS, Linux, or Windows. Run cargo leaderboard setup once to save your nickname, then cargo leaderboard build in your Rust project. cargo leaderboard doctor checks your setup without submitting a run. Archives are verified with SHA256SUMS by the installers. Source installation remains available. See the README for installation, updates, and privacy details.' --draft
+          gh release upload "$RELEASE_TAG" ./*
+          gh release edit "$RELEASE_TAG" --draft=false --latest
