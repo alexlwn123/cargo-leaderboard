@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#234de2" />
+    <meta name="theme-color" content="#f5f3ec" />
     <title>Cargo Leaderboard — A heavyweight Rust competition</title>
     <meta
       name="description"
@@ -26,8 +26,7 @@
         ><span>Cargo<br />Leaderboard</span></a
       >
       <nav aria-label="Main navigation">
-        <a id="account-link" href="/account.html" hidden
-          >Your account</a
+        <a id="account-link" href="/account.html" hidden>Your account</a
         ><a class="button small" href="#submit"
           >Add your project <span aria-hidden="true">+</span></a
         >
@@ -40,10 +39,9 @@
           <h1 id="page-title">That’s a lot<br />of <code>target/</code>.</h1>
         </div>
         <div class="intro-note">
-          <span class="badge">Bigger is better. Here, anyway.</span>
           <p>
-            Your disk suffered.<br />
-            Your project deserves a place on the board.
+            Rust builds take up space. Compare your build artifacts, biggest
+            cleans, and longest waits.
           </p>
           <a href="#method">What are we measuring?</a>
         </div>
@@ -117,11 +115,10 @@
       </section>
       <section class="join" id="submit" aria-labelledby="join-title">
         <div class="join-copy">
-          <span class="section-number" aria-hidden="true">+</span>
           <h2 id="join-title">Put your project<br />on the scales.</h2>
           <p>
-            Give your coding agent the prompt. It installs the CLI, connects your
-            GitHub account, and gets your first build onto the board.
+            Your agent installs the CLI, connects GitHub, and submits your first
+            build. Start with the prompt.
           </p>
           <p class="privacy-note">
             Your GitHub account, project label, measurements, platform and Cargo
@@ -134,63 +131,86 @@
         </div>
         <div class="terminal">
           <div class="terminal-heading">
-            <span>Agent setup</span><span>One prompt. Your next build.</span>
+            <span>Agent setup</span>
           </div>
           <div class="command-block agent-setup">
             <div class="command-label">
               <span>Paste into your coding agent</span>
-              <button type="button" class="copy" data-copy="agent-code">Copy prompt</button>
+              <button type="button" class="copy" data-copy="agent-code">
+                Copy prompt
+              </button>
             </div>
-            <p class="agent-context">Open your Rust project in Codex, Claude Code, or another coding agent with terminal access.</p>
-            <pre class="agent-prompt"><code id="agent-code">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
-            <a class="agent-guide" id="agent-guide" href="/agents.md">Read the agent instructions <span aria-hidden="true">↗</span></a>
+            <p class="agent-context">
+              Open your Rust project in Codex, Claude Code, or another coding
+              agent with terminal access.
+            </p>
+            <pre
+              class="agent-prompt"
+            ><code id="agent-code">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
+            <a class="agent-guide" id="agent-guide" href="/agents.md"
+              >Read the agent instructions <span aria-hidden="true">↗</span></a
+            >
           </div>
           <details class="manual-setup" id="manual-setup">
             <summary>Prefer a terminal? Manual setup</summary>
-          <div class="install-platforms" role="group" aria-label="Installation platform">
-            <button type="button" data-install="unix" aria-pressed="true">macOS / Linux</button>
-            <button type="button" data-install="windows" aria-pressed="false">Windows</button>
-            <button type="button" data-install="source" aria-pressed="false">From source</button>
-          </div>
-          <p class="install-note" id="install-note"><span id="install-method">Prebuilt binary, checksum verified. Requires </span><a href="https://rustup.rs">Rust</a> to build your projects.</p>
-          <div class="command-block">
-            <div class="command-label">
-              <span>1. Install</span
-              ><button type="button" class="copy" data-copy="install-code">
-                Copy
+            <div
+              class="install-platforms"
+              role="group"
+              aria-label="Installation platform"
+            >
+              <button type="button" data-install="unix" aria-pressed="true">
+                macOS / Linux
+              </button>
+              <button type="button" data-install="windows" aria-pressed="false">
+                Windows
+              </button>
+              <button type="button" data-install="source" aria-pressed="false">
+                From source
               </button>
             </div>
-            <pre><code id="install-code">curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&
-sh /tmp/cargo-leaderboard-install.sh</code></pre>
-          </div>
-          <div class="command-block">
-            <div class="command-label">
-              <span>2. Connect your GitHub account</span
-              ><button type="button" class="copy" data-copy="config-code">
-                Copy
-              </button>
-            </div>
-            <pre><code id="config-code">cargo leaderboard login</code></pre>
-          </div>
-          <div class="command-block">
-            <div class="command-label">
-              <span>3. Run inside your Rust project</span
-              ><button type="button" class="copy" data-copy="build-code">
-                Copy build
-              </button>
-            </div>
-            <pre><code id="build-code">cargo leaderboard build</code></pre>
-            <div class="clean-command">
-              <code>cargo leaderboard clean</code
-              ><button type="button" class="copy" data-copy="clean-code">
-                Copy clean</button
-              ><code id="clean-code" hidden>cargo leaderboard clean</code>
-            </div>
-            <p class="terminal-note">
-              Clean deletes your build artifacts, just like cargo clean.
-              Setup trouble? Run <code>cargo leaderboard doctor</code>.
+            <p class="install-note" id="install-note">
+              <span id="install-method"
+                >Prebuilt binary, checksum verified. Requires </span
+              ><a href="https://rustup.rs">Rust</a> to build your projects.
             </p>
-          </div>
+            <div class="command-block">
+              <div class="command-label">
+                <span>1. Install</span
+                ><button type="button" class="copy" data-copy="install-code">
+                  Copy
+                </button>
+              </div>
+              <pre><code id="install-code">curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&
+sh /tmp/cargo-leaderboard-install.sh</code></pre>
+            </div>
+            <div class="command-block">
+              <div class="command-label">
+                <span>2. Connect your GitHub account</span
+                ><button type="button" class="copy" data-copy="config-code">
+                  Copy
+                </button>
+              </div>
+              <pre><code id="config-code">cargo leaderboard login</code></pre>
+            </div>
+            <div class="command-block">
+              <div class="command-label">
+                <span>3. Run inside your Rust project</span
+                ><button type="button" class="copy" data-copy="build-code">
+                  Copy build
+                </button>
+              </div>
+              <pre><code id="build-code">cargo leaderboard build</code></pre>
+              <div class="clean-command">
+                <code>cargo leaderboard clean</code
+                ><button type="button" class="copy" data-copy="clean-code">
+                  Copy clean</button
+                ><code id="clean-code" hidden>cargo leaderboard clean</code>
+              </div>
+              <p class="terminal-note">
+                Clean deletes your build artifacts, just like cargo clean. Setup
+                trouble? Run <code>cargo leaderboard doctor</code>.
+              </p>
+            </div>
           </details>
           <p
             class="copy-status"
@@ -201,10 +221,9 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
         </div>
       </section>
       <section class="method" id="method" aria-labelledby="method-title">
-        <h2 id="method-title">The fine print, in human units.</h2>
+        <h2 id="method-title">How the scores work.</h2>
         <div class="method-grid">
           <article>
-            <span class="method-mark" aria-hidden="true">↗</span>
             <h3>Builds take up space.</h3>
             <p>
               We count file sizes across Cargo’s target and build directories
@@ -214,7 +233,6 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
             </p>
           </article>
           <article>
-            <span class="method-mark" aria-hidden="true">↘</span>
             <h3>Cleans give it back.</h3>
             <p>
               The before-and-after difference is your clean score. Partial
@@ -223,13 +241,12 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
             </p>
           </article>
           <article>
-            <span class="method-mark" aria-hidden="true">≈</span>
             <h3>A competition. Not a benchmark.</h3>
             <p>
               Hardware, flags and warm caches vary. Sizes are logical bytes, not
               allocated disk blocks. Shared directories include other projects.
-              Avoid concurrent builds while measuring. GitHub accounts are verified; scores are
-              self-reported.
+              Avoid concurrent builds while measuring. GitHub accounts are
+              verified; scores are self-reported.
             </p>
           </article>
         </div>
