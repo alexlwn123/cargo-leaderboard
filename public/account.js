@@ -4,38 +4,30 @@ let refresh;
 const requestedCode = new URL(location.href).searchParams.get('code');
 let code = requestedCode && /^[a-f0-9]{10}$/i.test(requestedCode) ? requestedCode.toUpperCase() : null;
 let approved = false;
-$('#agent-prompt').textContent = 'Set up Cargo Leaderboard in this Rust project using ' + location.origin +
-  '/agents.md, then run a build and verify the submission.' +
-  (location.origin === 'https://cargo-leaderboard.vercel.app' ? '' : ' Use ' + location.origin + ' as the leaderboard server.');
 if (code) {
   $('#device-code').value = code.slice(0, 5) + '-' + code.slice(5);
   $('#sign-in').href = '/auth/login?user_code=' + encodeURIComponent(code);
 }
 function render() {
   const user = session?.user;
-  $('#get-started').hidden = !!code || approved;
-  $('#account-card').hidden = !code && !user && !approved;
   $('#signed-out').hidden = !code || !!user;
   $('#signed-in').hidden = !user;
   $('#approve-form').hidden = !code || !user;
-  $('#account-title').textContent = approved ? 'Connection approved.' : code ? 'Connect this CLI.' : user ? 'Your projects. Your account.' : 'Put your project on the board.';
+  $('#account-title').textContent = approved ? 'Connection approved.' : code ? 'Connect this CLI.' : 'Your GitHub account.';
   $('#account-intro').textContent = approved ? 'Return to your agent or terminal to continue with your first build.' : code ?
     'Sign in with GitHub to continue. You’ll review the connection before approving it.' :
-    'Your agent will install the CLI and guide you through GitHub sign-in.';
-  $('#account-status').textContent = user ? `Signed in as @${user.github_login}` : 'Your leaderboard identity';
+    'GitHub sign-in starts from your CLI.';
+  $('#account-status').textContent = user ? `Signed in as @${user.github_login}` : !session ? 'Checking your login…' : 'You’re not signed in.';
   if (!code && user && !approved) {
-    $('#account-intro').textContent = 'Manage your connected CLIs, or add another project with your agent.';
-    $('#get-started').before($('#account-card'));
+    $('#account-intro').textContent = 'Manage your connected CLIs and account access.';
   }
   if (code && user) $('#account-intro').textContent = 'Allow this CLI to submit measurements under your GitHub account.';
+  if (session?.local) {
+    $('#account-intro').textContent = 'GitHub sign-in is not required for a local leaderboard.';
+    $('#account-status').textContent = 'Using a local leaderboard.';
+  }
 }
 render();
-$('#copy-prompt').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText($('#agent-prompt').textContent);
-    $('#copy-status').textContent = 'Copied. Paste it into your coding agent.';
-  } catch { $('#copy-status').textContent = 'Select the prompt and copy it manually.'; }
-});
 async function load() {
   clearTimeout(refresh);
   try {
