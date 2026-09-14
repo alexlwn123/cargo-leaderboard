@@ -866,6 +866,3 @@ code {
   .site-header nav > a.button.small { display: inline-flex; padding: 10px 12px; gap: 8px; font-size: 12px; }
   .site-header nav { flex-wrap: wrap; justify-content: flex-end; }
 }
-
-.onboarding-prompt { white-space: pre-wrap; overflow-wrap: anywhere; padding: 18px; margin-bottom: 16px; color: var(--ink); background: var(--pale); border-radius: 8px; font-size: 14px; line-height: 1.7; }
-#get-started h2 { margin-top: 0; }

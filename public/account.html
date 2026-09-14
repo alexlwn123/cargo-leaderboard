@@ -14,17 +14,9 @@
   </header>
   <main class="wrap account-page">
     <p class="intro-label">Your builds. Your GitHub account.</p>
-    <h1 id="account-title">Put your project on the board.</h1>
-    <p class="account-intro" id="account-intro">Your agent will install the CLI and guide you through GitHub sign-in.</p>
-    <section class="account-card" id="get-started" aria-labelledby="get-started-title">
-      <h2 id="get-started-title">Start with your agent</h2>
-      <p>Open your Rust project in your coding agent and paste this prompt.</p>
-      <pre class="onboarding-prompt"><code id="agent-prompt">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
-      <button type="button" class="button" id="copy-prompt">Copy agent prompt</button>
-      <p id="copy-status" role="status"></p>
-      <p><a href="/#manual-setup">Prefer a terminal? Installation instructions</a></p>
-    </section>
-    <section class="account-card" id="account-card" hidden aria-label="GitHub account">
+    <h1 id="account-title">Your GitHub account.</h1>
+    <p class="account-intro" id="account-intro">View your sign-in status and manage CLI access.</p>
+    <section class="account-card" id="account-card" aria-label="GitHub account">
       <p id="account-status" role="status">Checking your login…</p>
       <div id="signed-out" hidden>
         <a class="button" id="sign-in" href="/auth/login">Sign in with GitHub <span aria-hidden="true">↗</span></a>
