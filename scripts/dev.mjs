@@ -11,6 +11,8 @@ const files = new Map([
   ["/app.js", ["app.js", "text/javascript"]],
   ["/agents.md", ["agents.md", "text/plain"]],
   ["/llms.txt", ["llms.txt", "text/plain"]],
+  ["/robots.txt", ["robots.txt", "text/plain"]],
+  ["/sitemap.xml", ["sitemap.xml", "application/xml"]],
   ["/install.sh", ["install.sh", "text/plain"]],
   ["/install.ps1", ["install.ps1", "text/plain"]],
   ["/favicon.svg", ["favicon.svg", "image/svg+xml"]],
