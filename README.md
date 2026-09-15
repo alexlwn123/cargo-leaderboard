@@ -2,15 +2,15 @@
 
 A heavyweight Rust competition: compare enormous build directories, satisfying cleans, and long waits for the compiler.
 
-**[View the leaderboard](https://cargo-leaderboard.vercel.app)**
+**[View the leaderboard](https://cargo.lwn.lol)**
 
 ## Set up with your coding agent
 
 Open your Rust project in an agent with terminal access and paste:
 
-> Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a fresh-build benchmark and verify the submission.
+> Set up Cargo Leaderboard in this Rust project using https://cargo.lwn.lol/agents.md, then run a fresh-build benchmark and verify the submission.
 
-The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. Installation comes first: the agent installs the CLI, the CLI starts browser approval, then the agent verifies the login and submission. The homepage starts with the agent prompt; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
+The [agent guide](https://cargo.lwn.lol/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. Installation comes first: the agent installs the CLI, the CLI starts browser approval, then the agent verifies the login and submission. The homepage starts with the agent prompt; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo.lwn.lol/llms.txt).
 
 ## Manual setup
 
@@ -19,7 +19,7 @@ Install [Rust](https://rustup.rs) if you don't already have it. Download the CLI
 **macOS / Linux** (Apple Silicon or Intel; Linux ARM64 or x64):
 
 ```sh
-curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&
+curl -fsSL https://cargo.lwn.lol/install.sh -o /tmp/cargo-leaderboard-install.sh &&
 sh /tmp/cargo-leaderboard-install.sh
 ```
 
@@ -27,7 +27,7 @@ sh /tmp/cargo-leaderboard-install.sh
 
 ```powershell
 & {
-  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\cargo-leaderboard-install.ps1" -ErrorAction Stop
+  Invoke-WebRequest https://cargo.lwn.lol/install.ps1 -OutFile "$env:TEMP\cargo-leaderboard-install.ps1" -ErrorAction Stop
   powershell -ExecutionPolicy Bypass -File "$env:TEMP\cargo-leaderboard-install.ps1"
 }
 ```
@@ -37,7 +37,7 @@ You can inspect the downloaded script before running it. Installers download the
 **Then, on any platform:**
 
 ```sh
-cargo leaderboard login
+cargo leaderboard login --api-url https://cargo.lwn.lol
 # Sign in with GitHub and approve the code shown in your terminal.
 cargo leaderboard doctor
 
@@ -46,7 +46,7 @@ cargo leaderboard benchmark
 cargo leaderboard clean
 ```
 
-For coding agents or SSH, use `cargo leaderboard login --no-browser`: open the printed URL yourself, sign in with GitHub, and approve the matching code. The CLI saves its own revocable token for future terminals. No repository scopes are requested. Existing nickname-only clients must update and log in; anonymous public submissions are no longer accepted.
+For coding agents or SSH, use `cargo leaderboard login --no-browser --api-url https://cargo.lwn.lol`: open the printed URL yourself, sign in with GitHub, and approve the matching code. The CLI saves its own revocable token for future terminals. No repository scopes are requested. Existing nickname-only clients must update and log in; anonymous public submissions are no longer accepted.
 
 **Build from source** with a current stable Rust toolchain and Git (also the fallback for unsupported platforms):
 
@@ -80,7 +80,9 @@ Both `cargo leaderboard …` and `cargo-leaderboard …` work. A failed Cargo co
 
 ## Configuration, updates, and troubleshooting
 
-Run `cargo leaderboard login` to connect or switch your GitHub account. Add `--api-url https://your-board.example` for another authenticated board. Tokens expire after 90 days. `cargo leaderboard logout` revokes this machine's token; the [account page](https://cargo-leaderboard.vercel.app/account.html) can revoke all CLI access. Signing out of the website leaves CLI credentials active.
+Run `cargo leaderboard login` to connect or switch your GitHub account. Add `--api-url https://your-board.example` for another authenticated board. Tokens expire after 90 days. `cargo leaderboard logout` revokes this machine's token; the [account page](https://cargo.lwn.lol/account.html) can revoke all CLI access. Signing out of the website leaves CLI credentials active.
+
+**Moving from the old Vercel URL:** upgrades preserve saved server settings. Run `cargo leaderboard login --api-url https://cargo.lwn.lol`, approve the new connection, then run `cargo leaderboard doctor` to verify the account and destination. This also works with CLI 0.4.0. Saved credentials are scoped to one server; changing the API URL alone does not transfer the login.
 
 The standalone SQLite server retains nickname setup:
 

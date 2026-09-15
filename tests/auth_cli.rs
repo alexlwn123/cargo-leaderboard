@@ -109,3 +109,24 @@ async fn saved_token_is_never_forwarded_to_another_server() -> Result<()> {
         .success();
     Ok(())
 }
+
+#[test]
+fn switching_to_canonical_domain_requires_login_and_preserves_saved_credentials() -> Result<()> {
+    let dir = TempDir::new()?;
+    let path = dir.path().join("config.json");
+    let saved = json!({
+        "api_url": "https://cargo-leaderboard.vercel.app",
+        "github_login": "alex",
+        "token": "clb_cli_test-credential"
+    })
+    .to_string();
+    std::fs::write(&path, &saved)?;
+    let output = cli(dir.path())
+        .env("CARGO_LEADERBOARD_API_URL", "https://cargo.lwn.lol")
+        .arg("doctor")
+        .output()?;
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("GitHub login required"));
+    assert_eq!(std::fs::read_to_string(path)?, saved);
+    Ok(())
+}

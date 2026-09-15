@@ -5,7 +5,7 @@ use std::time::Duration;
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
-pub const DEFAULT_API_URL: &str = "https://cargo-leaderboard.vercel.app";
+pub const DEFAULT_API_URL: &str = "https://cargo.lwn.lol";
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct BuildConfig {

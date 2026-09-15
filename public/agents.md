@@ -1,6 +1,6 @@
 # Cargo Leaderboard: agent setup guide
 
-Use this guide when a user asks you to install Cargo Leaderboard or put their Rust project on the board. Complete setup in their project with your terminal tools. The public board is https://cargo-leaderboard.vercel.app; use a different server when the user's prompt specifies one.
+Use this guide when a user asks you to install Cargo Leaderboard or put their Rust project on the board. Complete setup in their project with your terminal tools. The public board is https://cargo.lwn.lol; use a different server when the user's prompt specifies one.
 
 ## 1. Establish the project and destination
 
@@ -16,7 +16,7 @@ Check `cargo --version` and `cargo leaderboard --version`. Reuse a working curre
 For macOS or Linux, download and inspect the installer, then run it:
 
 ```sh
-curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&
+curl -fsSL https://cargo.lwn.lol/install.sh -o /tmp/cargo-leaderboard-install.sh &&
 sh /tmp/cargo-leaderboard-install.sh
 ```
 
@@ -24,7 +24,7 @@ For Windows x64, use PowerShell:
 
 ```powershell
 & {
-  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\cargo-leaderboard-install.ps1" -ErrorAction Stop
+  Invoke-WebRequest https://cargo.lwn.lol/install.ps1 -OutFile "$env:TEMP\cargo-leaderboard-install.ps1" -ErrorAction Stop
   powershell -ExecutionPolicy Bypass -File "$env:TEMP\cargo-leaderboard-install.ps1"
   if ($LASTEXITCODE -ne 0) { throw 'Cargo Leaderboard installation failed' }
 }
@@ -42,13 +42,15 @@ Start this step after installation succeeds. The CLI initiates browser sign-in; 
 
 Run `cargo leaderboard doctor` to check the saved login and server. Continue with an existing login only when it verifies the intended GitHub account and destination.
 
-For a missing, expired, revoked, or old nickname-only setup, run:
+Upgrades preserve saved server settings, including the former `https://cargo-leaderboard.vercel.app` address. The explicit destination below also works with CLI 0.4.0.
+
+For a missing, expired, revoked, old nickname-only setup, or a saved server that differs from the intended destination, run:
 
 ```sh
 cargo leaderboard login --no-browser --api-url "SERVER_URL"
 ```
 
-Replace `SERVER_URL` with the intended board (normally `https://cargo-leaderboard.vercel.app`). The command prints an approval URL and confirmation code, then waits for up to ten minutes. Show that URL and code to the user and ask them to sign in with GitHub and approve the matching code. Keep the command running while they do so; poll it without starting another login. This browser approval is the one human step. For a human-operated terminal, omit `--no-browser` to open the browser automatically.
+Replace `SERVER_URL` with the intended board (normally `https://cargo.lwn.lol`). The command prints an approval URL and confirmation code, then waits for up to ten minutes. Show that URL and code to the user and ask them to sign in with GitHub and approve the matching code. Keep the command running while they do so; poll it without starting another login. This browser approval is the one human step. For a human-operated terminal, omit `--no-browser` to open the browser automatically.
 
 Complete authentication only after the CLI prints `Logged in as @USERNAME`. If it expires, retry login when the user is ready. Never fabricate approval, request GitHub passwords or personal access tokens, or read/print the saved credential. The CLI saves a revocable Cargo Leaderboard token in its user configuration, restricted to its selected server; it does not receive GitHub repository access.
 
@@ -78,7 +80,7 @@ The board may take up to 45 seconds to refresh and retains only the best score p
 
 ## Reference
 
-- [Public leaderboard](https://cargo-leaderboard.vercel.app)
+- [Public leaderboard](https://cargo.lwn.lol)
 - [CLI documentation, configuration paths, privacy, and API](https://github.com/alexlwn123/cargo-leaderboard#readme)
 - [Release binaries and SHA256SUMS](https://github.com/alexlwn123/cargo-leaderboard/releases/latest)
 - Manage/revoke CLI access: [Account page](/account.html); `cargo leaderboard logout` revokes this machine’s saved token.

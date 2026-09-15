@@ -1,11 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mint, valid, hash, csrf, requireCsrf, requireCli, githubIdentity } from './auth.mjs';
+import { mint, valid, hash, csrf, requireCsrf, requireCli, githubIdentity, origin } from './auth.mjs';
 import { createAuthHandler } from '../api/auth.mjs';
 import { createEventsHandler } from '../api/build-events.mjs';
 process.env.AUTH_SECRET = 'test-only-secret-that-is-at-least-32-characters';
 process.env.APP_ORIGIN = 'http://127.0.0.1:3000';
 const response = () => ({ headers: {}, setHeader(k, v) { this.headers[k] = v; }, end(body) { this.body = body ? JSON.parse(body) : null; } });
+test('OAuth defaults to the canonical domain and respects configured deployments', () => {
+  const configured = process.env.APP_ORIGIN;
+  try {
+    delete process.env.APP_ORIGIN;
+    assert.equal(origin(), 'https://cargo.lwn.lol');
+    process.env.APP_ORIGIN = 'https://preview.example';
+    assert.equal(origin(), 'https://preview.example');
+  } finally {
+    if (configured === undefined) delete process.env.APP_ORIGIN;
+    else process.env.APP_ORIGIN = configured;
+  }
+});
 test('signed credentials are scoped, unguessable and reject tampering before database access', async () => {
   const token = mint('cli');
   assert.equal(valid(token, 'cli'), true);

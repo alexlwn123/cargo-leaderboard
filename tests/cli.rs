@@ -245,7 +245,7 @@ fn setup_saves_defaults_updates_atomically_and_rejects_invalid_values() -> Resul
         .success();
     let saved: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
     assert_eq!(saved["nickname"], "first");
-    assert_eq!(saved["api_url"], "https://cargo-leaderboard.vercel.app");
+    assert_eq!(saved["api_url"], "https://cargo.lwn.lol");
     isolated_cli(dir.path())?
         .args([
             "setup",

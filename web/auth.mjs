@@ -9,7 +9,7 @@ export function secret() {
   return process.env.AUTH_SECRET;
 }
 export function origin() {
-  const url = new URL(process.env.APP_ORIGIN || 'https://cargo-leaderboard.vercel.app');
+  const url = new URL(process.env.APP_ORIGIN || 'https://cargo.lwn.lol');
   if (url.protocol !== 'https:' && !(['localhost', '127.0.0.1'].includes(url.hostname) && !process.env.VERCEL))
     throw new Error('APP_ORIGIN must use HTTPS');
   return url.origin;
