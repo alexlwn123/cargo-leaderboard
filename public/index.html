@@ -51,10 +51,10 @@
           <div class="metric-tabs" role="group" aria-label="Ranking metric">
             <button
               type="button"
-              data-metric="largest_build"
+              data-metric="largest_fresh_build"
               aria-pressed="true"
             >
-              Biggest builds
+              Fresh builds
             </button>
             <button
               type="button"
@@ -62,6 +62,9 @@
               aria-pressed="false"
             >
               Biggest cleans
+            </button>
+            <button type="button" data-metric="largest_build" aria-pressed="false">
+              Build folders
             </button>
             <button
               type="button"
@@ -82,20 +85,20 @@
         </div>
         <div class="board-caption">
           <p id="metric-description">
-            Total artifact footprint after a successful build.
+            One debug build in an empty directory. Temporary artifacts removed afterward.
           </p>
           <span id="entry-count" aria-live="polite">Loading…</span>
         </div>
         <div class="table-scroll">
           <table>
             <caption class="sr-only" id="table-caption">
-              Biggest Rust builds, ranked by total artifact bytes
+              Fresh Rust builds, ranked by artifact bytes
             </caption>
             <thead>
               <tr>
                 <th scope="col" class="rank-heading">Rank</th>
                 <th scope="col">Project / builder</th>
-                <th scope="col" id="value-heading">Build footprint</th>
+                <th scope="col" id="value-heading">Fresh build size</th>
                 <th scope="col" id="secondary-heading">Build time</th>
                 <th scope="col" class="date-heading">Recorded</th>
               </tr>
@@ -118,11 +121,11 @@
           <h2 id="join-title">Put your project<br />on the scales.</h2>
           <p>
             Your agent installs the CLI, connects GitHub, and submits your first
-            build. Start with the prompt.
+            fresh build. Start with the prompt.
           </p>
           <p class="privacy-note">
-            Your GitHub account, project label, measurements, platform and Cargo
-            version are public. Source code and local paths stay on your
+            Your GitHub account, project label, measurements, platform, tool
+            versions, revision and benchmark flags are public. Source code and local paths stay on your
             machine.
           </p>
           <a href="https://github.com/alexlwn123/cargo-leaderboard#readme"
@@ -146,7 +149,7 @@
             </p>
             <pre
               class="agent-prompt"
-            ><code id="agent-code">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.</code></pre>
+            ><code id="agent-code">Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a fresh-build benchmark and verify the submission.</code></pre>
             <a class="agent-guide" id="agent-guide" href="/agents.md"
               >Read the agent instructions <span aria-hidden="true">↗</span></a
             >
@@ -196,10 +199,10 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
               <div class="command-label">
                 <span>3. Run inside your Rust project</span
                 ><button type="button" class="copy" data-copy="build-code">
-                  Copy build
+                  Copy benchmark
                 </button>
               </div>
-              <pre><code id="build-code">cargo leaderboard build</code></pre>
+              <pre><code id="build-code">cargo leaderboard benchmark</code></pre>
               <div class="clean-command">
                 <code>cargo leaderboard clean</code
                 ><button type="button" class="copy" data-copy="clean-code">
@@ -207,7 +210,7 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
                 ><code id="clean-code" hidden>cargo leaderboard clean</code>
               </div>
               <p class="terminal-note">
-                Clean deletes your build artifacts, just like cargo clean. Setup
+                Benchmark removes its temporary artifacts; your existing build folder stays intact. Clean deletes your build artifacts, just like cargo clean. Setup
                 trouble? Run <code>cargo leaderboard doctor</code>.
               </p>
             </div>
@@ -224,12 +227,12 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
         <h2 id="method-title">How the scores work.</h2>
         <div class="method-grid">
           <article>
-            <h3>Builds take up space.</h3>
+            <h3>Fresh builds start empty.</h3>
             <p>
-              We count file sizes across Cargo’s target and build directories
-              after a successful build. Cached artifacts, dependencies and other
-              profiles count too. This is total footprint, not just the latest
-              build’s output.
+              Benchmark runs one debug build in an isolated directory, counts
+              its artifacts, then removes them. Existing caches and earlier
+              builds stay on the separate Build folders board, including all
+              scores from before fresh benchmarks launched.
             </p>
           </article>
           <article>
@@ -241,12 +244,13 @@ sh /tmp/cargo-leaderboard-install.sh</code></pre>
             </p>
           </article>
           <article>
-            <h3>A competition. Not a benchmark.</h3>
+            <h3>Compare the context, too.</h3>
             <p>
-              Hardware, flags and warm caches vary. Sizes are logical bytes, not
-              allocated disk blocks. Shared directories include other projects.
-              Avoid concurrent builds while measuring. GitHub accounts are
-              verified; scores are self-reported.
+              Rust versions, platforms, features and project profile settings
+              still vary. Open Build details to see the revision and flags.
+              Times depend on your machine and download caches. Sizes are logical
+              bytes, not allocated disk blocks. GitHub accounts are verified;
+              scores are self-reported.
             </p>
           </article>
         </div>

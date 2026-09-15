@@ -54,8 +54,10 @@ pub async fn project(args: &[String]) -> Result<Project> {
         }
         index += 1;
     }
-    // metadata has no --target-dir flag. A final config override has the same precedence.
+    // metadata has no --target-dir flag. CARGO_TARGET_DIR is special: it also
+    // overrides --config, so replace it when emulating an explicit CLI path.
     if let Some(directory) = target_dir {
+        command.env("CARGO_TARGET_DIR", &directory);
         command.arg("--config").arg(format!(
             "build.target-dir={}",
             serde_json::to_string(&directory)?

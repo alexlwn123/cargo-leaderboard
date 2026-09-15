@@ -91,6 +91,17 @@ test('GitHub login → device approval → verified submission → revocation, w
     const board = await leaderboard('largest_build', 100, sql);
     assert.equal(board.entries[0].github_login, 'renamed-account');
     assert.equal(Object.hasOwn(board.entries[0], 'nickname'), false);
+    // Fresh scores coexist with historical folder scores for the same account/project.
+    const fresh = { ...event, event_id: randomUUID(), bytes: 20, bytes_after: 20,
+      benchmark: { rustc_version: 'rustc 1.95.0', revision: 'a'.repeat(40), dirty: false, cargo_args: ['--bins'] } };
+    assert.equal((await invoke(events, '/v1/build-events', { method: 'POST', body: fresh, headers: cliHeaders })).statusCode, 201);
+    assert.equal((await leaderboard('largest_build', 100, sql)).entries[0].bytes, 42);
+    const freshBoard = await leaderboard('largest_fresh_build', 100, sql);
+    assert.equal(freshBoard.entries.length, 1);
+    assert.equal(freshBoard.entries[0].bytes, 20);
+    assert.deepEqual(freshBoard.entries[0].benchmark, fresh.benchmark);
+    assert.equal((await leaderboard('longest_single_build', 100, sql)).entries.length, 1);
+    assert.equal((await leaderboard('largest_clean', 100, sql)).entries.length, 0);
     // Multiple tokens share one stable account quota, and simultaneous requests cannot exceed it.
     const token2 = mint('cli');
     await sql`INSERT INTO auth_tokens (token_hash, github_id, kind, expires_at) VALUES (${hash(token2)}, 101, 'cli', NOW() + INTERVAL '1 day')`;

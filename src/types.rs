@@ -21,6 +21,17 @@ pub struct BuildEvent {
     pub file_count: i64,
     pub profile: String,
     pub platform: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub benchmark: Option<BenchmarkMetadata>,
+}
+
+/// Context for a fresh debug build. Missing on legacy accumulated-folder events.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BenchmarkMetadata {
+    pub rustc_version: String,
+    pub revision: Option<String>,
+    pub dirty: Option<bool>,
+    pub cargo_args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq, Eq)]
@@ -34,6 +45,8 @@ pub struct LeaderboardEntry {
     pub repo_slug: String,
     pub duration_ms: i64,
     pub finished_at: DateTime<Utc>,
+    #[sqlx(json(nullable))]
+    pub benchmark: Option<BenchmarkMetadata>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -73,6 +86,21 @@ impl BuildEvent {
         .any(|n| *n < 0 || *n > 9_007_199_254_740_991)
         {
             return Err("measurements must be nonnegative safe integers");
+        }
+        if let Some(benchmark) = &self.benchmark {
+            if self.command != "build" || self.bytes_before != 0 || self.profile != "debug" {
+                return Err("benchmarks require a fresh debug build");
+            }
+            if benchmark.rustc_version.is_empty()
+                || benchmark.rustc_version.len() > 120
+                || benchmark.rustc_version.chars().any(char::is_control)
+                || benchmark.revision.as_ref().is_some_and(|r| {
+                    ![40, 64].contains(&r.len()) || !r.bytes().all(|c| c.is_ascii_hexdigit())
+                })
+                || crate::benchmark::validate_args(&benchmark.cargo_args).is_err()
+            {
+                return Err("invalid benchmark context");
+            }
         }
         let expected = if self.command == "build" {
             self.bytes_after

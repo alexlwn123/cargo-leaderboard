@@ -1,4 +1,5 @@
 mod auth;
+mod benchmark;
 mod build;
 mod cli;
 mod config;

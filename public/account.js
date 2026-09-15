@@ -65,7 +65,7 @@ $('#approve-form').addEventListener('submit', async event => {
     await action('device-approve', { user_code: $('#device-code').value });
     code = null;
     approved = true;
-    $('#action-status').textContent = 'Approved. Return to your agent to continue, or run cargo leaderboard build once your terminal confirms login.';
+    $('#action-status').textContent = 'Approved. Return to your agent to continue, or run cargo leaderboard benchmark once your terminal confirms login.';
     history.replaceState(null, '', '/account.html');
     await load();
   } catch (error) { $('#action-status').textContent = error.message; }

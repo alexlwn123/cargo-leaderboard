@@ -901,3 +901,7 @@ code {
     scroll-behavior: auto;
   }
 }
+
+.benchmark-context { margin-top: 0.5rem; font-size: 0.8rem; font-weight: 400; }
+.benchmark-context summary { cursor: pointer; color: var(--ink); }
+.benchmark-context p { white-space: normal; overflow-wrap: anywhere; max-width: 32rem; }
