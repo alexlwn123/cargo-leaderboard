@@ -8,7 +8,7 @@ A heavyweight Rust competition: compare enormous build directories, satisfying c
 
 Open your Rust project in an agent with terminal access and paste:
 
-> Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a build and verify the submission.
+> Set up Cargo Leaderboard in this Rust project using https://cargo-leaderboard.vercel.app/agents.md, then run a fresh-build benchmark and verify the submission.
 
 The [agent guide](https://cargo-leaderboard.vercel.app/agents.md) covers installation, GitHub browser approval, existing settings, and verifying a real submission. Installation comes first: the agent installs the CLI, the CLI starts browser approval, then the agent verifies the login and submission. The homepage starts with the agent prompt; manual setup is available below. Agents discovering the site can start at [llms.txt](https://cargo-leaderboard.vercel.app/llms.txt).
 
@@ -41,8 +41,8 @@ cargo leaderboard login
 # Sign in with GitHub and approve the code shown in your terminal.
 cargo leaderboard doctor
 
-# Run from your Rust project:
-cargo leaderboard build
+# Run from your Rust project (CLI 0.4.0+):
+cargo leaderboard benchmark
 cargo leaderboard clean
 ```
 
@@ -51,10 +51,20 @@ For coding agents or SSH, use `cargo leaderboard login --no-browser`: open the p
 **Build from source** with a current stable Rust toolchain and Git (also the fallback for unsupported platforms):
 
 ```sh
-cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.3.0 --locked
+cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.4.0 --locked
 ```
 
 `clean` runs the real `cargo clean` and deletes its build artifacts. The wrapper never cleans automatically before a build.
+
+`benchmark` creates an isolated temporary directory for final and intermediate artifacts, runs one debug build, submits its size, and removes the directory even after a failed build or reporting failure. It leaves your existing build folder intact. Dependency downloads remain in Cargo's normal cache. Interrupted runs clean up on Ctrl-C; force-killing the process or a machine crash can leave the printed temporary directory to remove manually.
+
+```sh
+cargo leaderboard benchmark --repo my-project
+cargo leaderboard benchmark --manifest-path ../other/Cargo.toml -- --features full --bins
+cargo leaderboard benchmark --no-submit
+```
+
+Supported benchmark Cargo flags: `--features`/`-F`, `--all-features`, `--no-default-features`, `--package`/`-p`, `--exclude`, `--workspace`, `--bins`, `--lib`, `--target` (triple), `--jobs`/`-j`, `--locked`, `--offline`, `--frozen`. Use separated short-option values (`-j 4`). Profile, config and output-directory overrides are rejected. Feature/package/target flags are public; manifest paths stay local. Project build scripts still execute normally; the temporary directory is artifact isolation, not a sandbox.
 
 Pass normal Cargo flags after `--`. Put wrapper options (`--repo`, `--no-submit`) before that separator:
 
@@ -83,7 +93,7 @@ Settings and CLI credentials live at `$XDG_CONFIG_HOME/cargo-leaderboard/config.
 `CARGO_LEADERBOARD_API_URL` and `CARGO_LEADERBOARD_TOKEN` override saved values. Saved credentials are never forwarded to a different server. For CI, supply a Cargo Leaderboard CLI token through your CI secret store. `CARGO_LEADERBOARD_NICKNAME` still works for local SQLite boards; it cannot override your verified GitHub identity on the public server.
 
 - **Update:** run the installer again. It preserves your settings and keeps the existing binary if a download or checksum fails. Stop running CLI/server processes first on Windows.
-- **Pin a version:** pass `--version v0.3.0` to the shell installer or `-Version v0.3.0` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
+- **Pin a version:** pass `--version v0.4.0` to the shell installer or `-Version v0.4.0` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
 - **Command not found:** check that the installer directory is in PATH and reopen the terminal. `cargo --version` should work too; `rustup show` diagnoses a missing toolchain.
 - **Connection/configuration trouble:** `cargo leaderboard doctor` verifies the saved GitHub credential, server URL, Cargo, and connectivity without publishing anything. Quotas are checked when submitting. Unset old environment overrides if setup changes don't take effect.
 - **Remove:** delete `cargo-leaderboard` (Windows: `cargo-leaderboard.exe`) from the install directory. Optionally delete the config file above. For source installations, use `cargo uninstall cargo-leaderboard`.
@@ -96,19 +106,22 @@ Update the package version and lockfile, run the checks below, then push a match
 
 | Board | Score |
 | --- | --- |
-| Biggest builds | Total file bytes in Cargo's artifact and intermediate build directories after a successful build |
+| Fresh builds | File bytes from one debug build in an empty temporary directory (`benchmark`), removed afterward |
+| Largest build folder | Total file bytes in Cargo's artifact and intermediate build directories after a successful build |
 | Biggest cleans | Nonnegative difference between directory sizes before and after a successful clean |
 | Longest waits | Wall-clock milliseconds spent running a successful `cargo build` |
 
 The board keeps each GitHub account/project pair's highest score for each metric. Ties use the newest finish time, then event ID. Empty footprints and zero-byte cleans don't rank. Repeated event IDs are idempotent.
 
-Measurements include accumulated dependencies, incremental caches, other profiles and, when shared, other projects. A release build's footprint can therefore include existing debug artifacts. The profile identifies the command, not the contents of the entire directory. This is a fun comparison, not a controlled benchmark.
+Only the Build folders and Longest waits boards include ordinary `build` events. Old scores stay there; they are never relabeled as fresh benchmarks. Fresh builds use `benchmark` events with a zero-byte starting directory and the debug profile. Revision, dirty-checkout status, Rust version, platform and selected Cargo flags are recorded. Feature sets, target platforms and manifest profile settings can still vary, so this improves size comparisons without claiming reproducible performance measurements.
 
-Cargo metadata resolves workspaces, manifest paths, environment configuration, custom target directories and separate intermediate build directories. We don't follow symlinks within those directories. On Unix we count hard-linked files once per inode; on other platforms file paths are counted separately. Sizes are logical bytes, not allocated blocks or filesystem compression savings. File counts follow the same rule. Before/after subtraction can be distorted by concurrent builds, so avoid other writes while measuring. Time excludes metadata resolution, scanning and network submission. Build flags and CPU details are not collected.
+Accumulated folder measurements include dependencies, incremental caches, other profiles and, when shared, other projects. A release build's footprint can therefore include existing debug artifacts. The profile identifies the command, not the contents of the entire directory. This is a fun comparison, not a controlled benchmark.
+
+Cargo metadata resolves workspaces, manifest paths, environment configuration, custom target directories and separate intermediate build directories. We don't follow symlinks within those directories. On Unix we count hard-linked files once per inode; on other platforms file paths are counted separately. Sizes are logical bytes, not allocated blocks or filesystem compression savings. File counts follow the same rule. Before/after subtraction can be distorted by concurrent builds, so avoid other writes while measuring. Time excludes metadata resolution, scanning and network submission. Benchmark Cargo flags are collected; CPU details and environment variables are not. Build times can include downloads and compiler-cache effects, so treat them as secondary context.
 
 ## Privacy and trust
 
-Submissions publish a GitHub account, project label, before/after byte counts, scored bytes, file count, command, duration, timestamps, profile, OS/architecture, and Cargo/client versions. No source code, remote URL credentials or local paths are uploaded. The default project label comes from `origin`'s owner/repository, then Cargo metadata, then the directory name. Use `--repo` to replace a private label, or `--no-submit` to keep all measurements local.
+Submissions publish a GitHub account, project label, before/after byte counts, scored bytes, file count, command, duration, timestamps, profile, OS/architecture, and Cargo/client versions. Benchmarks additionally publish Rust version, Git revision, modified-checkout status and supported Cargo flags. No source code, remote URL credentials or local manifest/output paths are uploaded. The default project label comes from `origin`'s owner/repository, then Cargo metadata, then the directory name. Use `--repo` to replace a private label, or `--no-submit` to keep all measurements local.
 
 The public server verifies identity through GitHub OAuth (state binding and PKCE), keys scores by GitHub's stable account ID, and ignores client-supplied nicknames. GitHub usernames update when users sign in again. Scores and repository ownership are still self-reported: authentication is not proof of a measurement or ownership of its project label.
 
@@ -147,7 +160,7 @@ The development server loads `.env.local`; never commit it. Local SQLite and hos
 ## API
 
 - `POST /v1/build-events`: accept one validated successful build or clean event. Hosted responses are `201` (created), `200` (duplicate), `400` (invalid event), `401` (missing, invalid, expired or revoked CLI login), `413` (body too large), `415` (wrong content type), or `429` (rate limited). Server/storage failures return `503` on Vercel. SQLite returns `201` for duplicate IDs and uses its native error statuses.
-- `GET /v1/leaderboard?metric=largest_build&limit=100`: public ranked results. Other metrics: `largest_clean`, `longest_single_build`. Limits are clamped to 1–200. Hosted defaults to size; the SQLite API retains its prototype default of build duration. The UI always selects an explicit metric. Hosted rankings may take up to 45 seconds to refresh because of CDN caching.
+- `GET /v1/leaderboard?metric=largest_fresh_build&limit=100`: public ranked results. Other metrics: `largest_build` (accumulated folders), `largest_clean`, `longest_single_build`. Limits are clamped to 1–200. Hosted defaults to fresh-build size; the SQLite API retains its prototype default of build duration. The UI always selects an explicit metric. Hosted rankings may take up to 45 seconds to refresh because of CDN caching.
 
 The event shape is defined in `src/types.rs` and validated by `web/contract.mjs` on Vercel. Measurements must be nonnegative safe integers, and scored bytes must match the before/after definition. Event UUIDs cannot be reused to overwrite scores.
 

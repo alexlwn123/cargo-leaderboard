@@ -28,7 +28,9 @@ enum Commands {
     Setup(SetupArgs),
     /// Check configuration, Cargo, and the server without submitting anything.
     Doctor,
-    /// Build and submit the total artifact footprint.
+    /// Benchmark a fresh debug build, submit its size, then remove temporary artifacts.
+    Benchmark(BenchmarkArgs),
+    /// Build and submit the accumulated build-folder size.
     Build(BuildArgs),
     /// Clean and submit the bytes reclaimed. Runs the real cargo clean.
     Clean(BuildArgs),
@@ -69,6 +71,22 @@ struct BuildArgs {
 }
 
 #[derive(Debug, Args)]
+struct BenchmarkArgs {
+    /// Measure locally without sending an event.
+    #[arg(long)]
+    no_submit: bool,
+    /// Public project label.
+    #[arg(long)]
+    repo: Option<String>,
+    /// Cargo.toml to benchmark (the local path is never submitted).
+    #[arg(long)]
+    manifest_path: Option<std::path::PathBuf>,
+    /// Cargo feature, package, target, jobs or offline flags; profile/directory overrides are rejected.
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    cargo_args: Vec<String>,
+}
+
+#[derive(Debug, Args)]
 struct ServeArgs {
     #[arg(long, default_value = "127.0.0.1:3000")]
     bind: SocketAddr,
@@ -101,6 +119,15 @@ pub async fn run() -> Result<u8> {
         Commands::Doctor => {
             crate::config::doctor().await?;
             Ok(0)
+        }
+        Commands::Benchmark(args) => {
+            crate::benchmark::run(
+                args.cargo_args,
+                args.manifest_path,
+                args.no_submit,
+                args.repo,
+            )
+            .await
         }
         Commands::Build(args) => {
             run_command("build", args.cargo_args, args.no_submit, args.repo).await

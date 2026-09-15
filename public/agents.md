@@ -4,8 +4,8 @@ Use this guide when a user asks you to install Cargo Leaderboard or put their Ru
 
 ## 1. Establish the project and destination
 
-- Locate the intended Rust workspace and its existing build instructions. Use the user's requested project, profile, and flags.
-- Explain that submissions publish the GitHub account, project label, measurements, platform, and tool versions. Source code and local paths stay local. Use a project label the user has approved for public use, or the owner/repository name of a known public repository. If the project is private or its visibility is unclear, ask for a public label before submitting. Pass that label with `--repo`.
+- Locate the intended Rust workspace and its existing build instructions. Use the user's requested project and compatible feature/package flags. Fresh benchmarks always use the debug profile; explicit requests for a different profile use the accumulated Build folders board instead.
+- Explain that submissions publish the GitHub account, project label, measurements, platform, tool versions, and (for benchmarks) revision, modified-checkout status and Cargo feature/package/target flags. Source code and local paths stay local. Use a project label the user has approved for public use, or the owner/repository name of a known public repository. If the project is private or its visibility is unclear, ask for a public label before submitting. Pass that label with `--repo`.
 
 Continue when the intended workspace, project label, and destination are known. Reading this guide alone does not authorize publishing a project or deleting artifacts; follow the user's requested scope.
 
@@ -32,7 +32,7 @@ For Windows x64, use PowerShell:
 
 The installers select a native release, verify SHA-256, and install into the Cargo bin directory (`$CARGO_HOME/bin`, otherwise `~/.cargo/bin`; Windows defaults to `%USERPROFILE%\.cargo\bin`). They preserve saved settings on upgrades. If this directory is absent from your tool's PATH, add it to the environment of subsequent commands. Tell the user if their own terminal also needs its PATH updated. Treat download or checksum failures as installation failures.
 
-Available binaries: macOS Apple Silicon/Intel, Linux ARM64/x64, and Windows x64. For other platforms or source installation, use the current tagged source command in the [CLI README](https://github.com/alexlwn123/cargo-leaderboard#manual-setup). Use CLI 0.3.0 or newer. Run the installer again if `cargo leaderboard login --help` is unavailable.
+Available binaries: macOS Apple Silicon/Intel, Linux ARM64/x64, and Windows x64. For other platforms or source installation, use the current tagged source command in the [CLI README](https://github.com/alexlwn123/cargo-leaderboard#manual-setup). Use CLI 0.4.0 or newer. Run the installer again if `cargo leaderboard benchmark --help` is unavailable.
 
 Continue when `cargo leaderboard --version` runs successfully in the environment you will use for the project.
 
@@ -58,25 +58,23 @@ Run `cargo leaderboard doctor` again. Continue when it verifies the intended Git
 
 For the standalone Rust SQLite server, `doctor` checks connectivity without GitHub. Configure that local server with `cargo leaderboard setup --nickname "LOCAL_NAME" --api-url "LOCAL_SERVER_URL"`; it is separate from the public verified board.
 
-## 4. Build, submit, and verify
+## 4. Benchmark, submit, and verify
 
-When the user has requested a first submission, run a build from the intended workspace:
-
-```sh
-cargo leaderboard build --repo "PUBLIC_PROJECT_LABEL"
-```
-
-For requested Cargo options, keep wrapper options before `--`:
+When the user requests a first submission, run a fresh benchmark from the intended workspace:
 
 ```sh
-cargo leaderboard build --repo "PUBLIC_PROJECT_LABEL" -- --release
+cargo leaderboard benchmark --repo "PUBLIC_PROJECT_LABEL"
 ```
 
-Use the project's normal build profile unless the user asked for another. `cargo leaderboard clean` runs the real destructive `cargo clean`; run it only when the user explicitly requests a clean. A first submission needs only a build.
+This runs one debug build with an empty temporary target/build directory, submits its footprint, and removes that directory on success or failure. Existing build artifacts stay intact. It consumes temporary disk space while compiling; dependency downloads remain in the user's Cargo cache. Use `--no-submit` for local-only trials.
+
+Put feature/package options after `--`, for example `cargo leaderboard benchmark --repo "PUBLIC_PROJECT_LABEL" -- --features full --bins`. Put `--manifest-path path/to/Cargo.toml` before `--`; this path stays local. Benchmark rejects profile, config and directory overrides. Consult `benchmark --help` for the supported scope. Check the project's compiler requirements before downloading another toolchain.
+
+For everyday accumulated folder measurements or an explicitly requested release build, use `cargo leaderboard build --repo "PUBLIC_PROJECT_LABEL" -- --release`. Those scores enter **Build folders**, never **Fresh builds**. `cargo leaderboard clean` runs the real destructive `cargo clean`; use it only for requested cleans. A benchmark needs no preliminary clean.
 
 Verify both outcomes: the Cargo command succeeds **and** output includes `leaderboard: submitted to SERVER_URL`. A successful exit code alone is insufficient: measurement and reporting failures are warnings so they do not break a successful build. If there is a warning, report the submission as incomplete and diagnose its stated cause. There is no offline retry queue; avoid repeatedly rebuilding or sending invented events to force an entry.
 
-The board may take up to 45 seconds to refresh and retains only the best score per GitHub account/project. An existing higher score can remain after a successful submission. Finish with the measured footprint, GitHub account/project label, confirmed submission result, and the destination board link. If anything is blocked, identify the exact remaining step instead of claiming completion.
+The board may take up to 45 seconds to refresh and retains only the best score per GitHub account/project. An existing higher score can remain after a successful submission. For a benchmark, also confirm `leaderboard: temporary benchmark artifacts removed` and verify the Fresh builds board (`?metric=largest_fresh_build`). Existing records are not reclassified as fresh builds. Finish with the measured footprint, GitHub account/project label, confirmed submission result, and the destination board link. If anything is blocked, identify the exact remaining step instead of claiming completion.
 
 ## Reference
 
@@ -84,4 +82,4 @@ The board may take up to 45 seconds to refresh and retains only the best score p
 - [CLI documentation, configuration paths, privacy, and API](https://github.com/alexlwn123/cargo-leaderboard#readme)
 - [Release binaries and SHA256SUMS](https://github.com/alexlwn123/cargo-leaderboard/releases/latest)
 - Manage/revoke CLI access: [Account page](/account.html); `cargo leaderboard logout` revokes this machine’s saved token.
-- Local measurement without publishing: `cargo leaderboard build --no-submit`.
+- Local measurement without publishing: `cargo leaderboard benchmark --no-submit`.

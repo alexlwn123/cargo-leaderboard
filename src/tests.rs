@@ -35,6 +35,7 @@ async fn leaderboard_returns_longest_builds_first() {
             file_count: 0,
             profile: "debug".into(),
             platform: "test".into(),
+            benchmark: None,
         },
     )
     .await
@@ -59,6 +60,7 @@ async fn leaderboard_returns_longest_builds_first() {
             file_count: 0,
             profile: "debug".into(),
             platform: "test".into(),
+            benchmark: None,
         },
     )
     .await
@@ -125,6 +127,7 @@ fn sized_event(nickname: &str, command: &str, bytes: i64) -> BuildEvent {
         file_count: 1,
         profile: "debug".into(),
         platform: "test".into(),
+        benchmark: None,
     }
 }
 
@@ -231,4 +234,51 @@ async fn migration_preserves_legacy_duration_events() {
     let entries = crate::server::leaderboard_entries(&pool, 10).await.unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].bytes, None);
+}
+
+#[tokio::test]
+async fn fresh_scores_never_mix_with_accumulated_folders() {
+    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+    init_db(&pool).await.unwrap();
+    init_db(&pool).await.unwrap();
+    let old = sized_event("alice", "build", 1000);
+    insert_build_event(&pool, &old).await.unwrap();
+    let mut fresh = sized_event("alice", "build", 20);
+    fresh.benchmark = Some(crate::types::BenchmarkMetadata {
+        rustc_version: "rustc 1.95.0".into(),
+        revision: Some("a".repeat(40)),
+        dirty: Some(false),
+        cargo_args: vec!["--bins".into()],
+    });
+    assert!(fresh.validate().is_ok());
+    insert_build_event(&pool, &fresh).await.unwrap();
+    let router = app(AppState::new(pool, None));
+    for (metric, expected) in [("largest_fresh_build", 20), ("largest_build", 1000)] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/v1/leaderboard?metric={metric}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let board: crate::types::LeaderboardResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(board.entries.len(), 1);
+        assert_eq!(board.entries[0].bytes, Some(expected));
+        assert_eq!(
+            board.entries[0].benchmark.is_some(),
+            metric == "largest_fresh_build"
+        );
+    }
+    fresh.bytes_before = 1;
+    assert!(fresh.validate().is_err());
+    fresh.bytes_before = 0;
+    fresh.profile = "release".into();
+    assert!(fresh.validate().is_err());
 }

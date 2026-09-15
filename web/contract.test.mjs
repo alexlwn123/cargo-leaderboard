@@ -58,7 +58,7 @@ test("rejects invalid, oversized, and unsafe fields", () => {
     assert.throws(() => validateEvent({ ...event(), ...patch }));
 });
 test("query validation never interpolates an untrusted metric", () => {
-  assert.deepEqual(parseQuery("/"), { metric: "largest_build", limit: 100 });
+  assert.deepEqual(parseQuery("/"), { metric: "largest_fresh_build", limit: 100 });
   assert.equal(parseQuery("/?limit=900").limit, 200);
   assert.equal(parseQuery("/?limit=0").limit, 1);
   for (const query of [
@@ -132,4 +132,14 @@ test("Vercel lazy body-parser errors remain HTTP 400", async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 400);
   assert.match(JSON.parse(res.body).error, /JSON/);
+});
+
+test("fresh benchmarks require isolation, debug profile and safe recorded flags", () => {
+  const fresh = { ...event(), benchmark: { rustc_version: "rustc 1.95.0", revision: "a".repeat(40), dirty: false, cargo_args: ["--features", "full", "--bins", "-j", "4"] } };
+  assert.deepEqual(validateEvent(fresh).benchmark, fresh.benchmark);
+  for (const patch of [{ bytes_before: 1 }, { profile: "release" }, { command: "clean" }])
+    assert.throws(() => validateEvent({ ...fresh, ...patch }));
+  for (const cargo_args of [["--release"], ["--config", "build.target-dir=old"], ["--target-dir=old"], ["--features"], ["--target", "/private/target.json"], ["--all-features=yes"]])
+    assert.throws(() => validateEvent({ ...fresh, benchmark: { ...fresh.benchmark, cargo_args } }));
+  assert.equal(validateEvent(event()).benchmark, undefined);
 });

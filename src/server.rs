@@ -167,6 +167,7 @@ pub async fn init_db(pool: &SqlitePool) -> Result<()> {
 
     // Upgrade the original duration-only prototype without discarding its events.
     for (name, definition) in [
+        ("benchmark", "TEXT"),
         ("bytes", "INTEGER"),
         ("bytes_before", "INTEGER"),
         ("bytes_after", "INTEGER"),
@@ -210,7 +211,14 @@ async fn get_leaderboard(
     let metric = params
         .metric
         .unwrap_or_else(|| "longest_single_build".to_string());
-    if !["longest_single_build", "largest_build", "largest_clean"].contains(&metric.as_str()) {
+    if ![
+        "longest_single_build",
+        "largest_build",
+        "largest_fresh_build",
+        "largest_clean",
+    ]
+    .contains(&metric.as_str())
+    {
         return Err(ApiError::bad_request("unsupported metric"));
     }
 
@@ -225,8 +233,8 @@ pub async fn insert_build_event(pool: &SqlitePool, event: &BuildEvent) -> Result
         r#"
         INSERT INTO build_events (
             event_id, nickname, repo_slug, command, started_at, finished_at,
-            duration_ms, success, cargo_version, client_version, bytes, bytes_before, bytes_after, file_count, profile, platform
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
+            duration_ms, success, cargo_version, client_version, bytes, bytes_before, bytes_after, file_count, profile, platform, benchmark
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
         ON CONFLICT(event_id) DO NOTHING
         "#,
     )
@@ -241,6 +249,7 @@ pub async fn insert_build_event(pool: &SqlitePool, event: &BuildEvent) -> Result
     .bind(&event.cargo_version)
     .bind(&event.client_version)
     .bind(event.bytes).bind(event.bytes_before).bind(event.bytes_after).bind(event.file_count).bind(&event.profile).bind(&event.platform)
+    .bind(event.benchmark.as_ref().map(serde_json::to_string).transpose()?)
     .execute(pool)
     .await?;
 
@@ -258,8 +267,9 @@ async fn ranked_entries(
 ) -> Result<Vec<LeaderboardEntry>> {
     let (command, column, filter) = match metric {
         "largest_clean" => ("clean", "bytes", "AND bytes > 0"),
-        "largest_build" => ("build", "bytes", "AND bytes > 0"),
-        _ => ("build", "duration_ms", ""),
+        "largest_build" => ("build", "bytes", "AND bytes > 0 AND benchmark IS NULL"),
+        "largest_fresh_build" => ("build", "bytes", "AND bytes > 0 AND benchmark IS NOT NULL"),
+        _ => ("build", "duration_ms", "AND benchmark IS NULL"),
     };
     let sql = format!(
         r#"
@@ -268,7 +278,7 @@ async fn ranked_entries(
                 PARTITION BY nickname, repo_slug ORDER BY {column} DESC, finished_at DESC, event_id DESC
             ) AS rank FROM build_events WHERE success = 1 AND command = ?1 {filter}
         )
-        SELECT event_id, nickname, repo_slug, bytes, file_count, profile, platform, duration_ms, finished_at
+        SELECT event_id, nickname, repo_slug, bytes, file_count, profile, platform, duration_ms, finished_at, benchmark
         FROM ranked WHERE rank = 1 ORDER BY {column} DESC, finished_at DESC, event_id DESC LIMIT ?2
     "#
     );

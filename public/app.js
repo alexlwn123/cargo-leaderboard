@@ -1,8 +1,16 @@
 const definitions = {
+  largest_fresh_build: {
+    title: "Fresh builds",
+    description: "One debug build in an empty directory. Temporary artifacts removed afterward.",
+    heading: "Fresh build size",
+    secondary: "Build time",
+    empty: "A fresh start for fairer scores.",
+    hint: "Run cargo leaderboard benchmark with CLI 0.4.0+ to enter. Earlier scores remain under Build folders.",
+  },
   largest_build: {
-    title: "Biggest builds",
-    description: "Total artifact footprint after a successful build.",
-    heading: "Build footprint",
+    title: "Largest build folders",
+    description: "Accumulated artifacts, including earlier builds, caches and other profiles.",
+    heading: "Build-folder size",
     secondary: "Build time",
     empty: "The heavyweight title is open.",
     hint: "Build your Rust project with the CLI and claim the first spot.",
@@ -28,7 +36,7 @@ const $ = (selector) => document.querySelector(selector);
 const initialMetric = new URL(location.href).searchParams.get("metric");
 let metric = Object.hasOwn(definitions, initialMetric)
   ? initialMetric
-  : "largest_build";
+  : "largest_fresh_build";
 let requestId = 0;
 let abort;
 function node(tag, className, text) {
@@ -108,6 +116,16 @@ function render(entries) {
         return builder;
       })(),
     );
+    if (entry.benchmark) {
+      const details = node("details", "benchmark-context");
+      details.append(node("summary", "", "Build details"));
+      const b = entry.benchmark;
+      const context = [b.rustc_version, `${entry.profile} / ${entry.platform}`,
+        b.revision ? `${b.revision.slice(0, 12)}${b.dirty ? " (modified checkout)" : ""}` : "Revision unavailable",
+        b.cargo_args.length ? b.cargo_args.join(" ") : "No extra Cargo flags"];
+      details.append(node("p", "metadata", context.join(" · ")));
+      project.append(details);
+    }
     row.append(project);
     const primary = node("td");
     primary.append(
@@ -219,7 +237,7 @@ document.querySelectorAll("[data-metric]").forEach((button) =>
 );
 window.addEventListener("popstate", () => {
   const value = new URL(location.href).searchParams.get("metric");
-  metric = Object.hasOwn(definitions, value) ? value : "largest_build";
+  metric = Object.hasOwn(definitions, value) ? value : "largest_fresh_build";
   load();
 });
 $("#refresh").addEventListener("click", load);
@@ -240,7 +258,7 @@ document.querySelectorAll("[data-copy]").forEach((button) =>
 const installCommands = {
   unix: "curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&\nsh /tmp/cargo-leaderboard-install.sh",
   windows: '& {\n  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\\cargo-leaderboard-install.ps1" -ErrorAction Stop\n  powershell -ExecutionPolicy Bypass -File "$env:TEMP\\cargo-leaderboard-install.ps1"\n}',
-  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.3.0 --locked",
+  source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.4.0 --locked",
 };
 document.querySelectorAll("[data-install]").forEach((button) =>
   button.addEventListener("click", () => {
@@ -257,7 +275,7 @@ document.querySelectorAll("[data-install]").forEach((button) =>
 // Both setup paths use the current board, including self-hosted installations.
 $("#agent-code").textContent =
   "Set up Cargo Leaderboard in this Rust project using " + location.origin +
-  "/agents.md, then run a build and verify the submission." +
+  "/agents.md, then run a fresh-build benchmark and verify the submission." +
   (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
     " Use " + location.origin + " as the leaderboard server.");
 $("#config-code").textContent = "cargo leaderboard login" +

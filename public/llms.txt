@@ -9,5 +9,5 @@
 
 ## Explore
 
-- [Leaderboard](/): Biggest builds, biggest cleans, and longest waits.
+- [Leaderboard](/): Fresh debug builds, biggest cleans, accumulated build folders, and longest waits.
 - [Latest release](https://github.com/alexlwn123/cargo-leaderboard/releases/latest): Native binaries and SHA-256 checksums.

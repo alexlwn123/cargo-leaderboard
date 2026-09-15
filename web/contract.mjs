@@ -1,7 +1,8 @@
 export const metrics = {
-  largest_build: { command: "build", column: "bytes" },
+  largest_build: { command: "build", column: "bytes", fresh: false },
+  largest_fresh_build: { command: "build", column: "bytes", fresh: true },
   largest_clean: { command: "clean", column: "bytes" },
-  longest_single_build: { command: "build", column: "duration_ms" },
+  longest_single_build: { command: "build", column: "duration_ms", fresh: false },
 };
 export class HttpError extends Error {
   constructor(status, message) {
@@ -75,6 +76,17 @@ export function validateEvent(value, now = Date.now()) {
       : Math.max(0, e.bytes_before - e.bytes_after);
   if (e.bytes !== expected)
     fail("Bytes do not match before/after measurements.");
+  if (value.benchmark != null) {
+    const b = value.benchmark;
+    if (value.command !== "build" || e.bytes_before !== 0 || e.profile !== "debug")
+      fail("Benchmarks require a fresh debug build.");
+    if (typeof b !== "object" || Array.isArray(b) ||
+        typeof b.rustc_version !== "string" || !b.rustc_version || b.rustc_version.length > 120 || /[\p{Cc}]/u.test(b.rustc_version) ||
+        (b.revision !== null && !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(b.revision)) ||
+        (b.dirty !== null && typeof b.dirty !== "boolean")) fail("Invalid benchmark context.");
+    validateBenchmarkArgs(b.cargo_args, fail);
+    e.benchmark = { rustc_version: b.rustc_version, revision: b.revision, dirty: b.dirty, cargo_args: b.cargo_args };
+  }
   return {
     ...e,
     command: value.command,
@@ -84,11 +96,29 @@ export function validateEvent(value, now = Date.now()) {
 }
 export function parseQuery(url) {
   const params = new URL(url, "http://localhost").searchParams;
-  const metric = params.get("metric") || "largest_build";
+  const metric = params.get("metric") || "largest_fresh_build";
   if (!Object.hasOwn(metrics, metric))
     throw new HttpError(400, "Unsupported metric.");
   const raw = params.get("limit") ?? "100";
   if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)))
     throw new HttpError(400, "Invalid limit.");
   return { metric, limit: Math.max(1, Math.min(200, Number(raw))) };
+}
+
+// Matches src/benchmark.rs. Reject profile, config and output-directory overrides.
+function validateBenchmarkArgs(args, fail) {
+  if (!Array.isArray(args) || args.length > 64) fail("Invalid benchmark arguments.");
+  const flags = ["--all-features", "--no-default-features", "--workspace", "--bins", "--lib", "--locked", "--offline", "--frozen"];
+  const options = ["--features", "-F", "--package", "-p", "--exclude", "--target", "--jobs", "-j"];
+  const valid = v => typeof v === "string" && v.length > 0 && v.length <= 200 && !/[\p{Cc}]/u.test(v);
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (!valid(arg)) fail("Invalid benchmark argument.");
+    const eq = arg.indexOf("=");
+    const key = eq < 0 ? arg : arg.slice(0, eq);
+    if (eq < 0 && flags.includes(key)) continue;
+    if (!options.includes(key)) fail("Unsupported benchmark option.");
+    const value = eq < 0 ? args[++i] : arg.slice(eq + 1);
+    if (!valid(value) || value.startsWith("-") || (key === "--target" && /[/.\\]/.test(value))) fail("Invalid benchmark option value.");
+  }
 }

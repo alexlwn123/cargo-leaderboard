@@ -231,7 +231,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-leaderboard"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -240,6 +240,7 @@ dependencies = [
  "chrono",
  "clap",
  "http",
+ "libc",
  "reqwest",
  "serde",
  "serde_json",

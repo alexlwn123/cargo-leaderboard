@@ -10,13 +10,23 @@ use uuid::Uuid;
 use crate::config::BuildConfig;
 use crate::measurement::{measure, project};
 use crate::repo::resolve_repo_slug;
-use crate::types::BuildEvent;
+use crate::types::{BenchmarkMetadata, BuildEvent};
 
 pub async fn run_command(
     name: &str,
     cargo_args: Vec<String>,
     no_submit: bool,
     repo: Option<String>,
+) -> Result<u8> {
+    run_measured_command(name, cargo_args, no_submit, repo, None).await
+}
+
+pub(crate) async fn run_measured_command(
+    name: &str,
+    cargo_args: Vec<String>,
+    no_submit: bool,
+    repo: Option<String>,
+    benchmark: Option<BenchmarkMetadata>,
 ) -> Result<u8> {
     // Help and clean dry-runs must never appear as measured work.
     if cargo_args
@@ -41,6 +51,17 @@ pub async fn run_command(
         .transpose();
     if let Err(error) = &before {
         eprintln!("warning: measurement unavailable: {error:#}");
+    }
+    if benchmark.is_some() {
+        let footprint = before
+            .as_ref()
+            .map_err(|e| anyhow::anyhow!("{e:#}"))?
+            .as_ref()
+            .context("benchmark measurement unavailable")?;
+        anyhow::ensure!(
+            footprint.bytes == 0 && footprint.files == 0,
+            "benchmark directory must be empty"
+        );
     }
     let repo_slug = repo.unwrap_or_else(|| {
         project
@@ -87,7 +108,12 @@ pub async fn run_command(
                     bytes_before: before.bytes,
                     bytes_after: after.bytes,
                     file_count: files,
-                    profile: profile(&cargo_args, name),
+                    profile: if benchmark.is_some() {
+                        "debug".into()
+                    } else {
+                        profile(&cargo_args, name)
+                    },
+                    benchmark: benchmark.clone(),
                     platform: format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH),
                 };
                 eprintln!(
@@ -95,8 +121,10 @@ pub async fn run_command(
                     bytes as f64 / 1_073_741_824.0,
                     if name == "clean" {
                         "reclaimed"
+                    } else if benchmark.is_some() {
+                        "fresh build footprint"
                     } else {
-                        "total footprint"
+                        "total build-folder size"
                     },
                     duration_ms as f64 / 1000.0
                 );
@@ -135,15 +163,34 @@ fn profile(args: &[String], command: &str) -> String {
 }
 
 async fn spawn_cargo(name: &str, args: &[String]) -> Result<std::process::ExitStatus> {
-    Command::new("cargo")
+    let mut command = Command::new("cargo");
+    #[cfg(unix)]
+    command.process_group(0);
+    let mut child = command
         .arg(name)
         .args(args)
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
-        .status()
-        .await
-        .context("failed to execute cargo")
+        .kill_on_drop(true)
+        .spawn()
+        .context("failed to execute cargo")?;
+    tokio::select! {
+        status = child.wait() => status.context("failed to wait for cargo"),
+        signal = tokio::signal::ctrl_c() => {
+            signal?;
+            if let Some(pid) = child.id() {
+                #[cfg(unix)]
+                // SAFETY: cargo owns the process group created above. Killing the
+                // group stops rustc/build-script descendants before artifact cleanup.
+                unsafe { libc::kill(-(pid as i32), libc::SIGKILL); }
+                #[cfg(windows)]
+                { let _ = Command::new("taskkill").args(["/PID", &pid.to_string(), "/T", "/F"]).output().await; }
+            }
+            child.kill().await.ok();
+            anyhow::bail!("build interrupted");
+        }
+    }
 }
 
 async fn cargo_version() -> Result<String> {
@@ -238,6 +285,7 @@ mod tests {
             file_count: 0,
             profile: "debug".into(),
             platform: "test".into(),
+            benchmark: None,
         };
 
         let value = serde_json::to_value(event).expect("event to serialize");

@@ -368,3 +368,197 @@ async fn doctor_checks_response_shape_and_never_submits() -> Result<()> {
         .failure();
     Ok(())
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn benchmarks_isolate_artifacts_record_context_and_cleanup_on_every_outcome() -> Result<()> {
+    let events = Arc::new(Mutex::new(Vec::<BuildEvent>::new()));
+    let addr = spawn_capture_server(events.clone()).await?;
+    let project = TempDir::new()?;
+    let scratch = TempDir::new()?;
+    let old = TempDir::new()?;
+    fs::create_dir(project.path().join("src"))?;
+    fs::create_dir(project.path().join(".cargo"))?;
+    fs::write(
+        project.path().join("Cargo.toml"),
+        "[package]\nname='benchmark-fixture'\nversion='0.1.0'\nedition='2024'\n[features]\nextra=[]\n",
+    )?;
+    fs::write(project.path().join("src/main.rs"), "fn main() {}")?;
+    fs::write(old.path().join("sentinel"), vec![42; 5_000_000])?;
+    fs::write(
+        project.path().join(".cargo/config.toml"),
+        format!(
+            "[build]\ntarget-dir={}\nbuild-dir={}\n",
+            serde_json::to_string(&old.path().to_string_lossy())?,
+            serde_json::to_string(&old.path().to_string_lossy())?
+        ),
+    )?;
+    for attempt in 0..3 {
+        if attempt == 2 {
+            fs::write(project.path().join("src/main.rs"), "not valid rust")?;
+        }
+        let output = Command::cargo_bin("cargo-leaderboard")?
+            .current_dir(project.path())
+            .env("TMPDIR", scratch.path())
+            .env("TMP", scratch.path())
+            .env("TEMP", scratch.path())
+            .env("CARGO_TARGET_DIR", old.path())
+            .env("CARGO_BUILD_BUILD_DIR", old.path())
+            .env("CARGO_LEADERBOARD_API_URL", format!("http://{addr}"))
+            .env("CARGO_LEADERBOARD_NICKNAME", "tester")
+            .args([
+                "benchmark",
+                "--repo",
+                "public/example",
+                "--",
+                "--features",
+                "extra",
+                "--bins",
+            ])
+            .output()?;
+        assert_eq!(
+            output.status.success(),
+            attempt < 2,
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stderr)
+                .contains("temporary benchmark artifacts removed")
+        );
+        assert_eq!(fs::read_dir(scratch.path())?.count(), 0);
+        assert_eq!(fs::read_dir(old.path())?.count(), 1);
+        assert_eq!(fs::metadata(old.path().join("sentinel"))?.len(), 5_000_000);
+        assert!(!project.path().join("target").exists());
+    }
+    let captured = events.lock().unwrap();
+    assert_eq!(captured.len(), 2);
+    for e in captured.iter() {
+        assert_eq!(e.bytes_before, 0);
+        assert!(e.bytes > 0);
+        assert_eq!(e.bytes, e.bytes_after);
+        assert_eq!(e.profile, "debug");
+        assert_eq!(e.repo_slug, "public/example");
+        let b = e.benchmark.as_ref().unwrap();
+        assert!(b.rustc_version.starts_with("rustc "));
+        assert_eq!(b.revision, None);
+        assert_eq!(b.cargo_args, ["--features", "extra", "--bins"]);
+        assert!(e.validate().is_ok());
+    }
+    Ok(())
+}
+
+#[test]
+fn benchmark_rejects_overrides_and_cleans_up_without_submission() -> Result<()> {
+    let scratch = TempDir::new()?;
+    for flags in [
+        vec!["--release"],
+        vec!["--target-dir", "/tmp/shared"],
+        vec!["--config", "build.build-dir='shared'"],
+        vec!["--profile=release"],
+        vec!["--features"],
+        vec!["--target", "/private/target.json"],
+    ] {
+        Command::cargo_bin("cargo-leaderboard")?
+            .args(["benchmark", "--no-submit", "--"])
+            .args(flags)
+            .assert()
+            .failure();
+    }
+    let output = Command::cargo_bin("cargo-leaderboard")?
+        .env("TMPDIR", scratch.path())
+        .env("TMP", scratch.path())
+        .env("TEMP", scratch.path())
+        .args(["benchmark", "--no-submit", "--manifest-path"])
+        .arg(fixture_manifest("success-project"))
+        .output()?;
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("fresh build footprint"));
+    assert!(!stderr.contains("submitted to"));
+    assert_eq!(fs::read_dir(scratch.path())?.count(), 0);
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn benchmark_reporting_failure_still_removes_temporary_artifacts() -> Result<()> {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let addr = listener.local_addr()?;
+    drop(listener);
+    let scratch = TempDir::new()?;
+    let output = Command::cargo_bin("cargo-leaderboard")?
+        .env("TMPDIR", scratch.path())
+        .env("TMP", scratch.path())
+        .env("TEMP", scratch.path())
+        .env("CARGO_LEADERBOARD_API_URL", format!("http://{addr}"))
+        .env("CARGO_LEADERBOARD_NICKNAME", "tester")
+        .args(["benchmark", "--manifest-path"])
+        .arg(fixture_manifest("success-project"))
+        .output()?;
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("failed to report event"));
+    assert_eq!(fs::read_dir(scratch.path())?.count(), 0);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn interrupted_benchmark_stops_build_scripts_and_removes_artifacts() -> Result<()> {
+    use std::process::Stdio;
+    use std::time::{Duration, Instant};
+    let project = TempDir::new()?;
+    let scratch = TempDir::new()?;
+    fs::create_dir(project.path().join("src"))?;
+    fs::write(
+        project.path().join("Cargo.toml"),
+        "[package]\nname='interrupt-fixture'\nversion='0.1.0'\nedition='2024'\n",
+    )?;
+    fs::write(project.path().join("src/main.rs"), "fn main() {}")?;
+    fs::write(
+        project.path().join("build.rs"),
+        r#"fn main() {
+        std::fs::write("ready", "ready").unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        std::fs::write("should-not-exist", "survived").unwrap();
+    }"#,
+    )?;
+    let mut child = std::process::Command::new(assert_cmd::cargo::cargo_bin!("cargo-leaderboard"))
+        .current_dir(project.path())
+        .env("TMPDIR", scratch.path())
+        .args(["benchmark", "--no-submit"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
+    let deadline = Instant::now() + Duration::from_secs(20);
+    while !project.path().join("ready").exists() && Instant::now() < deadline {
+        if child.try_wait()?.is_some() {
+            panic!("benchmark exited before build script started");
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    if !project.path().join("ready").exists() {
+        child.kill()?;
+        panic!("build script did not start");
+    }
+    std::process::Command::new("kill")
+        .args(["-INT", &child.id().to_string()])
+        .status()?;
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        if let Some(status) = child.try_wait()? {
+            assert!(!status.success());
+            break;
+        }
+        if Instant::now() >= deadline {
+            child.kill()?;
+            panic!("interrupted benchmark did not exit");
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert_eq!(fs::read_dir(scratch.path())?.count(), 0);
+    assert!(!project.path().join("should-not-exist").exists());
+    Ok(())
+}
