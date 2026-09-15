@@ -58,7 +58,8 @@ test("rejects invalid, oversized, and unsafe fields", () => {
     assert.throws(() => validateEvent({ ...event(), ...patch }));
 });
 test("query validation never interpolates an untrusted metric", () => {
-  assert.deepEqual(parseQuery("/"), { metric: "largest_fresh_build", limit: 100 });
+  assert.deepEqual(parseQuery("/"), { metric: "largest_fresh_build", limit: 100, page: 1 });
+  assert.equal(parseQuery("/?limit=10&page=12").page, 12);
   assert.equal(parseQuery("/?limit=900").limit, 200);
   assert.equal(parseQuery("/?limit=0").limit, 1);
   for (const query of [
@@ -67,6 +68,11 @@ test("query validation never interpolates an untrusted metric", () => {
     "?limit=foo",
     "?limit=-1",
     "?limit=1.5",
+    "?page=0",
+    "?page=-1",
+    "?page=1.5",
+    "?page=NaN",
+    "?page=9007199254740991",
   ])
     assert.throws(() => parseQuery("/" + query));
 });
