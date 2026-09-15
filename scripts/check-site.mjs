@@ -12,6 +12,8 @@ for (const path of [
   "public/install.ps1",
   "public/agents.md",
   "public/llms.txt",
+  "public/robots.txt",
+  "public/sitemap.xml",
 ])
   await access(path);
 for (const file of [
