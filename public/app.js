@@ -237,7 +237,10 @@ document.querySelectorAll("[data-metric]").forEach((button) =>
 );
 window.addEventListener("popstate", () => {
   const value = new URL(location.href).searchParams.get("metric");
-  metric = Object.hasOwn(definitions, value) ? value : "largest_fresh_build";
+  const nextMetric = Object.hasOwn(definitions, value) ? value : "largest_fresh_build";
+  // Fragment navigation also fires popstate. Keep the board's height stable while scrolling.
+  if (nextMetric === metric) return;
+  metric = nextMetric;
   load();
 });
 $("#refresh").addEventListener("click", load);
@@ -279,7 +282,12 @@ $("#agent-code").textContent =
   " Use " + location.origin + " as the leaderboard server.";
 // Explicit destination also works with older binaries and saved server settings.
 $("#config-code").textContent = "cargo leaderboard login --api-url " + JSON.stringify(location.origin);
-load();
+const initialSetupHash = location.hash;
+load().then(() => {
+  // A direct setup link can scroll before the async leaderboard establishes its height.
+  if (["#submit", "#manual-setup"].includes(initialSetupHash) && location.hash === initialSetupHash)
+    document.querySelector(initialSetupHash).scrollIntoView({ block: "start", behavior: "instant" });
+});
 
 // Progressive enhancement: agents can select the same boards as a person can.
 if (document.modelContext?.registerTool) {
