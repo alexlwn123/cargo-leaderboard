@@ -20,6 +20,8 @@ try {
     $binary = Join-Path $bin 'cargo-leaderboard.exe'
     & $binary setup --nickname installer-test
     if ($LASTEXITCODE -ne 0) { throw 'Setup failed' }
+    # Existing logins (including the former server URL) must survive upgrades intact.
+    '{"api_url":"https://cargo-leaderboard.vercel.app","github_login":"installer-test","token":"clb_cli_test-only-credential"}' | Set-Content (Join-Path $env:CARGO_LEADERBOARD_CONFIG_DIR 'config.json')
     $config = Get-Content (Join-Path $env:CARGO_LEADERBOARD_CONFIG_DIR 'config.json') -Raw
     & ./public/install.ps1 -Version v0.3.0 -BinDir $bin
     if ((Get-Content (Join-Path $env:CARGO_LEADERBOARD_CONFIG_DIR 'config.json') -Raw) -ne $config) { throw 'Upgrade changed setup' }

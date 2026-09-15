@@ -51,7 +51,7 @@ For coding agents or SSH, use `cargo leaderboard login --no-browser --api-url ht
 **Build from source** with a current stable Rust toolchain and Git (also the fallback for unsupported platforms):
 
 ```sh
-cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.4.0 --locked
+cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.4.1 --locked
 ```
 
 `clean` runs the real `cargo clean` and deletes its build artifacts. The wrapper never cleans automatically before a build.
@@ -94,8 +94,8 @@ Settings and CLI credentials live at `$XDG_CONFIG_HOME/cargo-leaderboard/config.
 
 `CARGO_LEADERBOARD_API_URL` and `CARGO_LEADERBOARD_TOKEN` override saved values. Saved credentials are never forwarded to a different server. For CI, supply a Cargo Leaderboard CLI token through your CI secret store. `CARGO_LEADERBOARD_NICKNAME` still works for local SQLite boards; it cannot override your verified GitHub identity on the public server.
 
-- **Update:** run the installer again. It preserves your settings and keeps the existing binary if a download or checksum fails. Stop running CLI/server processes first on Windows.
-- **Pin a version:** pass `--version v0.4.0` to the shell installer or `-Version v0.4.0` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
+- **Update:** run the installer again to install the latest stable release. The CLI does not check for updates or replace itself during builds; agents following the current setup guide check for updates before setup or a requested benchmark. It preserves your settings and keeps the existing binary if a download or checksum fails. Stop running CLI/server processes first on Windows.
+- **Pin a version:** pass `--version v0.4.1` to the shell installer or `-Version v0.4.1` to PowerShell. Choose another directory with `--bin-dir DIRECTORY` / `-BinDir DIRECTORY`.
 - **Command not found:** check that the installer directory is in PATH and reopen the terminal. `cargo --version` should work too; `rustup show` diagnoses a missing toolchain.
 - **Connection/configuration trouble:** `cargo leaderboard doctor` verifies the saved GitHub credential, server URL, Cargo, and connectivity without publishing anything. Quotas are checked when submitting. Unset old environment overrides if setup changes don't take effect.
 - **Remove:** delete `cargo-leaderboard` (Windows: `cargo-leaderboard.exe`) from the install directory. Optionally delete the config file above. For source installations, use `cargo uninstall cargo-leaderboard`.

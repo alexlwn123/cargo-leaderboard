@@ -1,5 +1,6 @@
 """Exercise the real Unix installer using an isolated release mirror and binary."""
 import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
@@ -41,6 +42,11 @@ cp "$INSTALL_TEST_MIRROR/${url##*/}" "$output"
     subprocess.run(command, env=env, check=True)
     installed = dest / 'cargo-leaderboard'
     subprocess.run([str(installed), 'setup', '--nickname', 'installer-test'], env=env, check=True)
+    # Existing logins (including the former server URL) must survive upgrades intact.
+    (root / 'config/config.json').write_text(json.dumps({
+        'api_url': 'https://cargo-leaderboard.vercel.app',
+        'github_login': 'installer-test', 'token': 'clb_cli_test-only-credential',
+    }))
     config = (root / 'config/config.json').read_bytes()
     subprocess.run(command, env=env, check=True)  # Upgrade preserves setup.
     assert (root / 'config/config.json').read_bytes() == config
