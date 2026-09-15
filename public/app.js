@@ -256,8 +256,8 @@ document.querySelectorAll("[data-copy]").forEach((button) =>
   }),
 );
 const installCommands = {
-  unix: "curl -fsSL https://cargo-leaderboard.vercel.app/install.sh -o /tmp/cargo-leaderboard-install.sh &&\nsh /tmp/cargo-leaderboard-install.sh",
-  windows: '& {\n  Invoke-WebRequest https://cargo-leaderboard.vercel.app/install.ps1 -OutFile "$env:TEMP\\cargo-leaderboard-install.ps1" -ErrorAction Stop\n  powershell -ExecutionPolicy Bypass -File "$env:TEMP\\cargo-leaderboard-install.ps1"\n}',
+  unix: "curl -fsSL https://cargo.lwn.lol/install.sh -o /tmp/cargo-leaderboard-install.sh &&\nsh /tmp/cargo-leaderboard-install.sh",
+  windows: '& {\n  Invoke-WebRequest https://cargo.lwn.lol/install.ps1 -OutFile "$env:TEMP\\cargo-leaderboard-install.ps1" -ErrorAction Stop\n  powershell -ExecutionPolicy Bypass -File "$env:TEMP\\cargo-leaderboard-install.ps1"\n}',
   source: "cargo install --git https://github.com/alexlwn123/cargo-leaderboard --tag v0.4.0 --locked",
 };
 document.querySelectorAll("[data-install]").forEach((button) =>
@@ -276,11 +276,9 @@ document.querySelectorAll("[data-install]").forEach((button) =>
 $("#agent-code").textContent =
   "Set up Cargo Leaderboard in this Rust project using " + location.origin +
   "/agents.md, then run a fresh-build benchmark and verify the submission." +
-  (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
-    " Use " + location.origin + " as the leaderboard server.");
-$("#config-code").textContent = "cargo leaderboard login" +
-  (location.origin === "https://cargo-leaderboard.vercel.app" ? "" :
-    " --api-url " + JSON.stringify(location.origin));
+  " Use " + location.origin + " as the leaderboard server.";
+// Explicit destination also works with older binaries and saved server settings.
+$("#config-code").textContent = "cargo leaderboard login --api-url " + JSON.stringify(location.origin);
 load();
 
 // Progressive enhancement: agents can select the same boards as a person can.

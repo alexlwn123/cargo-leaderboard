@@ -11,7 +11,7 @@ import { submit, leaderboard } from './database.mjs';
 // Requires an isolated disposable database; never load .env.local for this suite.
 test('GitHub login → device approval → verified submission → revocation, with real PostgreSQL', { skip: !process.env.TEST_DATABASE_URL }, async () => {
   process.env.AUTH_SECRET = 'integration-only-secret-at-least-32-characters';
-  process.env.APP_ORIGIN = 'http://127.0.0.1:3000';
+  process.env.APP_ORIGIN = 'https://cargo.lwn.lol';
   process.env.GITHUB_CLIENT_ID = 'test-client'; process.env.GITHUB_CLIENT_SECRET = 'test-secret';
   const sql = postgres(process.env.TEST_DATABASE_URL);
   try {
@@ -34,6 +34,7 @@ test('GitHub login → device approval → verified submission → revocation, w
     };
     const start = await invoke(auth, '/auth/device-start', { method: 'POST', body: {} });
     assert.equal(start.statusCode, 201);
+    assert.equal(new URL(start.body.verification_uri_complete).origin, process.env.APP_ORIGIN);
     const { device_code, user_code } = start.body;
     const poll = () => invoke(auth, '/auth/device-poll', { method: 'POST', body: { device_code } });
     assert.equal((await poll()).statusCode, 202);
@@ -41,6 +42,7 @@ test('GitHub login → device approval → verified submission → revocation, w
     const login = await invoke(auth, '/auth/login?user_code=' + user_code);
     const oauth = new URL(login.headers.Location);
     assert.equal(oauth.origin, 'https://github.com');
+    assert.equal(oauth.searchParams.get('redirect_uri'), 'https://cargo.lwn.lol/auth/callback');
     assert.equal(oauth.searchParams.get('scope'), '');
     assert.equal(oauth.searchParams.get('code_challenge_method'), 'S256');
     const callback = '/auth/callback?code=code&state=' + oauth.searchParams.get('state');
@@ -56,6 +58,7 @@ test('GitHub login → device approval → verified submission → revocation, w
     const session = await invoke(auth, '/auth/session', { headers: { cookie: sessionCookie } });
     assert.equal(session.body.user.github_login, 'verified-alex');
     const browserHeaders = { cookie: sessionCookie, origin: process.env.APP_ORIGIN, 'x-csrf-token': session.body.csrf };
+    assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: { ...browserHeaders, origin: 'https://cargo-leaderboard.vercel.app' } })).statusCode, 403);
     assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: { cookie: sessionCookie } })).statusCode, 403);
     assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: browserHeaders })).statusCode, 200);
     assert.equal((await invoke(auth, '/auth/device-approve', { method: 'POST', body: { user_code }, headers: browserHeaders })).statusCode, 400);
@@ -122,6 +125,6 @@ test('GitHub login → device approval → verified submission → revocation, w
     assert.equal((await invoke(auth, '/auth/me', { headers: cliHeaders })).statusCode, 401);
     assert.equal((await invoke(auth, '/auth/logout', { method: 'POST', headers: browserHeaders })).statusCode, 200);
     assert.deepEqual((await invoke(auth, '/auth/session', { headers: { cookie: sessionCookie } })).body, { user: null });
-    assert.equal(cookieName(), 'clb_session');
+    assert.equal(cookieName(), '__Host-clb_session');
   } finally { await sql.end(); }
 });
