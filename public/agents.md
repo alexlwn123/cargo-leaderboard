@@ -11,7 +11,11 @@ Continue when the intended workspace, project label, and destination are known. 
 
 ## 2. Install or reuse the CLI
 
-Check `cargo --version` and `cargo leaderboard --version`. Reuse a working current installation. If Rust is missing, follow the official platform instructions at https://rustup.rs; identify any step that requires the user's own terminal or administrator access.
+Before setup or a requested benchmark, check `cargo --version` and `cargo leaderboard --version`.
+
+Fetch the latest stable release from https://api.github.com/repos/alexlwn123/cargo-leaderboard/releases/latest and compare its `tag_name` with the installed semantic version (ignore the leading `v`). Reuse a working installation at that version or newer. If it is missing or older, run the installer below, then verify `cargo leaderboard --version` again. Respect an explicit user version pin; explain if it cannot support the requested command. If the release lookup fails, report that the update check was unavailable; continue only with a working CLI 0.4.0 or newer for fresh benchmarks.
+
+If Rust is missing, follow the official platform instructions at https://rustup.rs; identify any step that requires the user's own terminal or administrator access.
 
 For macOS or Linux, download and inspect the installer, then run it:
 
@@ -34,7 +38,7 @@ The installers select a native release, verify SHA-256, and install into the Car
 
 Available binaries: macOS Apple Silicon/Intel, Linux ARM64/x64, and Windows x64. For other platforms or source installation, use the current tagged source command in the [CLI README](https://github.com/alexlwn123/cargo-leaderboard#manual-setup). Use CLI 0.4.0 or newer. Run the installer again if `cargo leaderboard benchmark --help` is unavailable.
 
-Continue when `cargo leaderboard --version` runs successfully in the environment you will use for the project.
+Continue when the installed version is verified in the project environment and the update check has been resolved (current, upgraded, explicitly pinned, or unavailable with a compatible version).
 
 ## 3. Connect the user's GitHub account
 
