@@ -102,7 +102,13 @@ export function parseQuery(url) {
   const raw = params.get("limit") ?? "100";
   if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)))
     throw new HttpError(400, "Invalid limit.");
-  return { metric, limit: Math.max(1, Math.min(200, Number(raw))) };
+  const limit = Math.max(1, Math.min(200, Number(raw)));
+  const rawPage = params.get("page") ?? "1";
+  const page = Number(rawPage);
+  if (!/^\d+$/.test(rawPage) || !Number.isSafeInteger(page) || page < 1 ||
+      !Number.isSafeInteger((page - 1) * limit))
+    throw new HttpError(400, "Invalid page.");
+  return { metric, limit, page };
 }
 
 // Matches src/benchmark.rs. Reject profile, config and output-directory overrides.

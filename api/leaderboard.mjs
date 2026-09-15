@@ -7,8 +7,8 @@ export default async function handler(req, res) {
     return send(res, 405, { error: "Use GET." });
   }
   try {
-    const { metric, limit } = parseQuery(req.url);
-    const payload = await leaderboard(metric, limit);
+    const { metric, limit, page } = parseQuery(req.url);
+    const payload = await leaderboard(metric, limit, undefined, page);
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader(

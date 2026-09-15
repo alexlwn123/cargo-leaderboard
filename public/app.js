@@ -39,6 +39,15 @@ let metric = Object.hasOwn(definitions, initialMetric)
   : "largest_fresh_build";
 let requestId = 0;
 let abort;
+const pageSize = 10;
+function pageFromUrl() {
+  const raw = new URL(location.href).searchParams.get("page") ?? "1";
+  const value = Number(raw);
+  return /^\d+$/.test(raw) && Number.isSafeInteger(value) && value > 0 &&
+    Number.isSafeInteger((value - 1) * pageSize) ? value : 1;
+}
+let page = pageFromUrl();
+let hasMore = false;
 function node(tag, className, text) {
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -103,8 +112,8 @@ function render(entries) {
     row.append(
       node(
         "td",
-        `rank${i === 0 ? " first" : ""}`,
-        String(i + 1).padStart(2, "0"),
+        `rank${page === 1 && i === 0 ? " first" : ""}`,
+        String((page - 1) * pageSize + i + 1).padStart(2, "0"),
       ),
     );
     const project = node("td");
@@ -174,9 +183,10 @@ function render(entries) {
   });
   $("#board-state").hidden = entries.length > 0;
   if (!entries.length)
-    state("0", definitions[metric].empty, definitions[metric].hint, true);
+    state("0", page === 1 ? definitions[metric].empty : "No entries on this page.",
+      page === 1 ? definitions[metric].hint : "Use Previous to return to earlier rankings.", page === 1);
   $("#entry-count").textContent =
-    `${entries.length === 100 ? "Top 100" : entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
+    entries.length ? `Entries ${(page - 1) * pageSize + 1}–${(page - 1) * pageSize + entries.length}` : "0 entries";
 }
 async function load() {
   const id = ++requestId;
@@ -196,6 +206,10 @@ async function load() {
   $("#secondary-heading").textContent = definition.secondary;
   $("#table-caption").textContent = `${definition.title}, ranked highest first`;
   $("#refresh").disabled = true;
+  $("#previous-page").disabled = true;
+  $("#next-page").disabled = true;
+  $("#page-label").textContent = `Page ${page}`;
+  hasMore = false;
   $("#entries").replaceChildren();
   $("#entry-count").textContent = "Loading…";
   state(
@@ -205,12 +219,13 @@ async function load() {
   );
   const timeout = setTimeout(() => abort.abort(), 15_000);
   try {
-    const response = await fetch(`/v1/leaderboard?metric=${metric}&limit=100`, {
+    const response = await fetch(`/v1/leaderboard?metric=${metric}&limit=${pageSize}&page=${page}`, {
       signal: abort.signal,
     });
     if (!response.ok) throw new Error("Could not load the leaderboard.");
     const payload = await response.json();
     if (id !== requestId) return;
+    hasMore = payload.has_more === true;
     render(payload.entries);
     return payload;
   } catch {
@@ -223,14 +238,20 @@ async function load() {
     );
   } finally {
     clearTimeout(timeout);
-    if (id === requestId) $("#refresh").disabled = false;
+    if (id === requestId) {
+      $("#refresh").disabled = false;
+      $("#previous-page").disabled = page <= 1;
+      $("#next-page").disabled = !hasMore;
+    }
   }
 }
 document.querySelectorAll("[data-metric]").forEach((button) =>
   button.addEventListener("click", () => {
     metric = button.dataset.metric;
+    page = 1;
     const url = new URL(location.href);
     url.searchParams.set("metric", metric);
+    url.searchParams.delete("page");
     history.pushState(null, "", url);
     load();
   }),
@@ -238,12 +259,29 @@ document.querySelectorAll("[data-metric]").forEach((button) =>
 window.addEventListener("popstate", () => {
   const value = new URL(location.href).searchParams.get("metric");
   const nextMetric = Object.hasOwn(definitions, value) ? value : "largest_fresh_build";
+  const nextPage = pageFromUrl();
   // Fragment navigation also fires popstate. Keep the board's height stable while scrolling.
-  if (nextMetric === metric) return;
+  if (nextMetric === metric && nextPage === page) return;
   metric = nextMetric;
+  page = nextPage;
   load();
 });
 $("#refresh").addEventListener("click", load);
+function changePage(nextPage) {
+  page = nextPage;
+  const url = new URL(location.href);
+  if (page === 1) url.searchParams.delete("page");
+  else url.searchParams.set("page", String(page));
+  url.hash = "leaderboard";
+  history.pushState(null, "", url);
+  load().then((result) => {
+    if (!result || location.href !== url.href) return;
+    $("#leaderboard").focus({ preventScroll: true });
+    $("#leaderboard").scrollIntoView({ block: "start" });
+  });
+}
+$("#previous-page").addEventListener("click", () => changePage(page - 1));
+$("#next-page").addEventListener("click", () => changePage(page + 1));
 document.querySelectorAll("[data-copy]").forEach((button) =>
   button.addEventListener("click", async () => {
     const target = document.getElementById(button.dataset.copy);
@@ -311,8 +349,10 @@ if (document.modelContext?.registerTool) {
           if (!input || !Object.hasOwn(definitions, input.metric))
             throw new Error("Unsupported metric");
           metric = input.metric;
+          page = 1;
           const url = new URL(location.href);
           url.searchParams.set("metric", metric);
+          url.searchParams.delete("page");
           history.pushState(null, "", url);
           const result = await load();
           if (!result)
