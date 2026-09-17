@@ -105,6 +105,31 @@ test('GitHub login → device approval → verified submission → revocation, w
     assert.deepEqual(freshBoard.entries[0].benchmark, fresh.benchmark);
     assert.equal((await leaderboard('longest_single_build', 100, sql)).entries.length, 1);
     assert.equal((await leaderboard('largest_clean', 100, sql)).entries.length, 0);
+    // Pagination applies after personal-best deduplication, with deterministic ties.
+    for (let i = 0; i < 123; i++) {
+      const size = 1000 - Math.floor(i / 2);
+      await submit({ ...event, event_id: randomUUID(), repo_slug: `pagination/project-${i}`,
+        command: 'clean', bytes: size, bytes_before: size, bytes_after: 0 },
+        { github_id: '101', github_login: 'renamed-account' }, sql);
+    }
+    await submit({ ...event, event_id: randomUUID(), repo_slug: 'pagination/project-0',
+      command: 'clean', bytes: 9999, bytes_before: 9999, bytes_after: 0 },
+      { github_id: '101', github_login: 'renamed-account' }, sql);
+    const all = (await leaderboard('largest_clean', 200, sql)).entries;
+    assert.equal(all.length, 123);
+    const paged = [];
+    for (let page = 1; page <= 13; page++) {
+      const result = await leaderboard('largest_clean', 10, sql, page);
+      assert.equal(result.page, page);
+      assert.equal(result.entries.length, page === 13 ? 3 : 10);
+      assert.equal(result.has_more, page < 13);
+      paged.push(...result.entries);
+    }
+    assert.deepEqual(paged, all);
+    assert.equal(new Set(paged.map(e => e.repo_slug)).size, 123);
+    const beyond = await leaderboard('largest_clean', 10, sql, 14);
+    assert.equal(beyond.entries.length, 0);
+    assert.equal(beyond.has_more, false);
     // Multiple tokens share one stable account quota, and simultaneous requests cannot exceed it.
     const token2 = mint('cli');
     await sql`INSERT INTO auth_tokens (token_hash, github_id, kind, expires_at) VALUES (${hash(token2)}, 101, 'cli', NOW() + INTERVAL '1 day')`;

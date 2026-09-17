@@ -9,7 +9,7 @@ export function database() {
   return (client ??= !process.env.VERCEL && ["localhost", "127.0.0.1"].includes(url.hostname)
     ? postgres(process.env.DATABASE_URL) : neon(process.env.DATABASE_URL));
 }
-export async function leaderboard(metric, limit, sql = database()) {
+export async function leaderboard(metric, limit, sql = database(), page = 1) {
   const { command, column, fresh } = metrics[metric];
   const scope = fresh === undefined ? "" : `AND benchmark IS ${fresh ? "NOT " : ""}NULL`;
   const entries = await sql.query(
@@ -18,13 +18,15 @@ export async function leaderboard(metric, limit, sql = database()) {
       SELECT *, ROW_NUMBER() OVER (PARTITION BY github_id, repo_slug ORDER BY ${column} DESC, finished_at DESC, event_id DESC) AS rank
       FROM build_events WHERE github_id IS NOT NULL AND command = $1 AND success AND ${column} > 0 ${scope}
     ) SELECT event_id, github_users.github_id::text, github_login, repo_slug, bytes, file_count, duration_ms, profile, platform, finished_at, benchmark
-      FROM ranked JOIN github_users USING (github_id) WHERE rank = 1 ORDER BY ${column} DESC, finished_at DESC, event_id DESC LIMIT $2
+      FROM ranked JOIN github_users USING (github_id) WHERE rank = 1 ORDER BY ${column} DESC, finished_at DESC, event_id DESC LIMIT $2 OFFSET $3
   `,
-    [command, limit],
+    [command, limit + 1, (page - 1) * limit],
   );
   return {
     metric,
-    entries: entries.map((e) => ({
+    page,
+    has_more: entries.length > limit,
+    entries: entries.slice(0, limit).map((e) => ({
       ...e,
       bytes: Number(e.bytes),
       file_count: Number(e.file_count),

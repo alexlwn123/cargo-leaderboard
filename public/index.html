@@ -53,7 +53,7 @@
           <a href="#method">What are we measuring?</a>
         </div>
       </section>
-      <section class="board" id="leaderboard" aria-label="Leaderboard">
+      <section class="board" id="leaderboard" aria-label="Leaderboard" tabindex="-1">
         <div class="board-top">
           <div class="metric-tabs" role="group" aria-label="Ranking metric">
             <button
@@ -118,6 +118,11 @@
           <h2>Weighing the competition.</h2>
           <p>Fetching the latest community entries.</p>
         </div>
+        <nav class="pagination" aria-label="Leaderboard pages">
+          <button type="button" class="button small" id="previous-page" disabled>Previous</button>
+          <span id="page-label" aria-live="polite">Page 1</span>
+          <button type="button" class="button small" id="next-page" disabled>Next</button>
+        </nav>
         <div class="board-foot">
           <span>Personal best per project. All time.</span
           ><span>GitHub accounts. Self-reported scores.</span>
